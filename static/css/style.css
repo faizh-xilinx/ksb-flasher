@@ -620,45 +620,43 @@ html, body {
   margin-top: 16px;
 }
 
-/* Terminal layout – left column (SEC top / NMC bottom) | right half (XSDB) */
-.terminal-layout {
-  display: flex;
+/* Terminal grid layout */
+.terminal-grid {
+  display: grid;
   flex: 1;
   min-height: 0;
+  gap: 1px;
+  background: var(--border);
 }
 
-.left-column {
-  display: flex;
-  flex-direction: column;
-  flex: 0 0 50%;
-  max-width: 50%;
-  min-height: 0;
+/* Default: XSDB off -- SEC/NMC left, APU right (2 cols) */
+.terminal-grid {
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
 }
 
-.left-column .terminal-pane {
-  flex: 1;
-  min-height: 0;
+.terminal-grid #pane-sec { grid-area: 1 / 1 / 2 / 2; }
+.terminal-grid #pane-nmc { grid-area: 2 / 1 / 3 / 2; }
+.terminal-grid #pane-apu { grid-area: 1 / 2 / 3 / 3; }
+
+/* XSDB on: 4 equal quarters */
+.terminal-grid.quad-mode {
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
 }
+
+.terminal-grid.quad-mode #pane-sec { grid-area: 1 / 1 / 2 / 2; }
+.terminal-grid.quad-mode #pane-nmc { grid-area: 1 / 2 / 2 / 3; }
+.terminal-grid.quad-mode #pane-apu { grid-area: 2 / 1 / 3 / 2; }
+.terminal-grid.quad-mode #pane-xsdb { grid-area: 2 / 2 / 3 / 3; }
 
 .terminal-pane {
   display: flex;
   flex-direction: column;
   min-width: 0;
+  min-height: 0;
   overflow: hidden;
-}
-
-.pane-half { flex: 0 0 50%; max-width: 50%; }
-
-.pane-divider.vertical {
-  width: 1px;
-  background: var(--border);
-  flex-shrink: 0;
-}
-
-.pane-divider.horizontal {
-  height: 1px;
-  background: var(--border);
-  flex-shrink: 0;
+  background: var(--bg-primary);
 }
 
 /* Pane header */
@@ -890,45 +888,6 @@ select#profile-select option {
   color: var(--text);
 }
 
-/* ── Resizable pane dividers ────────────────────────────────────────── */
-
-.pane-divider.vertical {
-  width: 5px;
-  cursor: col-resize;
-  background: var(--border);
-  transition: background var(--transition);
-  position: relative;
-}
-
-.pane-divider.vertical::after {
-  content: '';
-  position: absolute;
-  inset: 0 -3px;
-}
-
-.pane-divider.vertical:hover,
-.pane-divider.vertical.dragging {
-  background: var(--accent);
-}
-
-.pane-divider.horizontal {
-  height: 5px;
-  cursor: row-resize;
-  background: var(--border);
-  transition: background var(--transition);
-  position: relative;
-}
-
-.pane-divider.horizontal::after {
-  content: '';
-  position: absolute;
-  inset: -3px 0;
-}
-
-.pane-divider.horizontal:hover,
-.pane-divider.horizontal.dragging {
-  background: var(--accent);
-}
 
 /* ── Light theme ────────────────────────────────────────────────────── */
 

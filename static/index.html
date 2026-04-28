@@ -190,10 +190,10 @@
           <span class="font-size-label" id="font-size-label">13</span>
           <button class="toolbar-btn font-btn" id="font-up" title="Increase font (Ctrl++)">A+</button>
         </div>
-        <label class="toolbar-btn toolbar-toggle" id="apu-toggle" title="Show/hide APU UART pane">
-          <input type="checkbox" id="apu-checkbox" />
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><rect x="2" y="3" width="12" height="10" rx="1"/><path d="M5 8h6M5 6h3"/></svg>
-          APU
+        <label class="toolbar-btn toolbar-toggle" id="xsdb-toggle" title="Show/hide XSDB pane (4-quad mode)">
+          <input type="checkbox" id="xsdb-checkbox" />
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><rect x="2" y="3" width="12" height="10" rx="1"/><path d="M8 3v10M2 8h12"/></svg>
+          XSDB
         </label>
         <label class="toolbar-btn toolbar-toggle" id="broadcast-toggle" title="Broadcast input to all panes">
           <input type="checkbox" id="broadcast-checkbox" />
@@ -256,53 +256,45 @@
       </div>
     </div>
 
-    <!-- Terminal panes -->
-    <div class="terminal-layout">
-      <div class="left-column">
-        <div class="terminal-pane" id="pane-sec">
-          <div class="pane-header">
-            <span class="status-dot" id="status-sec"></span>
-            <span class="pane-title">SEC Minicom</span>
-            <span class="pane-spacer"></span>
-            <button class="pane-btn" id="reconnect-sec" title="Reconnect this pane">
-              <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 4v4h4M15 12V8h-4"/><path d="M2.5 10.5a6 6 0 0 0 10.2 1.8M13.5 5.5a6 6 0 0 0-10.2-1.8"/></svg>
-            </button>
-          </div>
-          <div class="pane-body" id="term-sec"></div>
+    <!-- Terminal panes: 2x2 grid when XSDB on, 2-column when XSDB off -->
+    <div class="terminal-grid" id="terminal-grid">
+      <div class="terminal-pane" id="pane-sec">
+        <div class="pane-header">
+          <span class="status-dot" id="status-sec"></span>
+          <span class="pane-title">SEC Minicom</span>
+          <span class="pane-spacer"></span>
+          <button class="pane-btn" id="reconnect-sec" title="Reconnect this pane">
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 4v4h4M15 12V8h-4"/><path d="M2.5 10.5a6 6 0 0 0 10.2 1.8M13.5 5.5a6 6 0 0 0-10.2-1.8"/></svg>
+          </button>
         </div>
-
-        <div class="pane-divider horizontal"></div>
-
-        <div class="terminal-pane" id="pane-nmc">
-          <div class="pane-header">
-            <span class="status-dot" id="status-nmc"></span>
-            <span class="pane-title">NMC Minicom</span>
-            <span class="pane-spacer"></span>
-            <button class="pane-btn" id="reconnect-nmc" title="Reconnect this pane">
-              <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 4v4h4M15 12V8h-4"/><path d="M2.5 10.5a6 6 0 0 0 10.2 1.8M13.5 5.5a6 6 0 0 0-10.2-1.8"/></svg>
-            </button>
-          </div>
-          <div class="pane-body" id="term-nmc"></div>
-        </div>
-
-        <div class="pane-divider horizontal apu-element hidden" id="apu-divider"></div>
-
-        <div class="terminal-pane apu-element hidden" id="pane-apu">
-          <div class="pane-header">
-            <span class="status-dot" id="status-apu"></span>
-            <span class="pane-title">APU UART</span>
-            <span class="pane-spacer"></span>
-            <button class="pane-btn" id="reconnect-apu" title="Reconnect this pane">
-              <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 4v4h4M15 12V8h-4"/><path d="M2.5 10.5a6 6 0 0 0 10.2 1.8M13.5 5.5a6 6 0 0 0-10.2-1.8"/></svg>
-            </button>
-          </div>
-          <div class="pane-body" id="term-apu"></div>
-        </div>
+        <div class="pane-body" id="term-sec"></div>
       </div>
 
-      <div class="pane-divider vertical"></div>
+      <div class="terminal-pane" id="pane-nmc">
+        <div class="pane-header">
+          <span class="status-dot" id="status-nmc"></span>
+          <span class="pane-title">NMC Minicom</span>
+          <span class="pane-spacer"></span>
+          <button class="pane-btn" id="reconnect-nmc" title="Reconnect this pane">
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 4v4h4M15 12V8h-4"/><path d="M2.5 10.5a6 6 0 0 0 10.2 1.8M13.5 5.5a6 6 0 0 0-10.2-1.8"/></svg>
+          </button>
+        </div>
+        <div class="pane-body" id="term-nmc"></div>
+      </div>
 
-      <div class="terminal-pane pane-half" id="pane-xsdb">
+      <div class="terminal-pane" id="pane-apu">
+        <div class="pane-header">
+          <span class="status-dot" id="status-apu"></span>
+          <span class="pane-title">APU UART</span>
+          <span class="pane-spacer"></span>
+          <button class="pane-btn" id="reconnect-apu" title="Reconnect this pane">
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 4v4h4M15 12V8h-4"/><path d="M2.5 10.5a6 6 0 0 0 10.2 1.8M13.5 5.5a6 6 0 0 0-10.2-1.8"/></svg>
+          </button>
+        </div>
+        <div class="pane-body" id="term-apu"></div>
+      </div>
+
+      <div class="terminal-pane xsdb-element hidden" id="pane-xsdb">
         <div class="pane-header">
           <span class="status-dot" id="status-xsdb"></span>
           <span class="pane-title">XSDB Session</span>

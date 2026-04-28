@@ -54,8 +54,9 @@
   const $fontUp        = $("font-up");
   const $fontDown      = $("font-down");
   const $fontSizeLabel = $("font-size-label");
-  const $apuToggle     = $("apu-toggle");
-  const $apuCheckbox   = $("apu-checkbox");
+  const $xsdbToggle    = $("xsdb-toggle");
+  const $xsdbCheckbox  = $("xsdb-checkbox");
+  const $terminalGrid  = $("terminal-grid");
   const $broadcastToggle = $("broadcast-toggle");
   const $broadcastCheckbox = $("broadcast-checkbox");
   const $exportBtn     = $("export-config-btn");
@@ -188,8 +189,6 @@
     }
 
     // Resizable dividers
-    initResizableDividers();
-
     if ("Notification" in window && Notification.permission === "default") {
       Notification.requestPermission();
     }
@@ -208,12 +207,12 @@
       if ((e.ctrlKey || e.metaKey) && e.key === "0") { e.preventDefault(); changeFontSize(0); }
     });
 
-    // APU pane toggle
-    $apuCheckbox.addEventListener("change", () => {
-      $apuToggle.classList.toggle("active", $apuCheckbox.checked);
-      document.querySelectorAll(".apu-element").forEach(el => {
-        el.classList.toggle("hidden", !$apuCheckbox.checked);
-      });
+    // XSDB pane toggle (switches between 3-pane and 4-quad layout)
+    $xsdbCheckbox.addEventListener("change", () => {
+      const on = $xsdbCheckbox.checked;
+      $xsdbToggle.classList.toggle("active", on);
+      $terminalGrid.classList.toggle("quad-mode", on);
+      document.querySelectorAll(".xsdb-element").forEach(el => el.classList.toggle("hidden", !on));
       fitAllTerminals();
     });
 
@@ -527,73 +526,6 @@
         } catch {}
       }
     }
-  }
-
-  // -- Resizable dividers ----------------------------------------------
-
-  function initResizableDividers() {
-    const vDiv = document.querySelector(".terminal-layout > .pane-divider.vertical");
-    const hDiv = document.querySelector(".left-column > .pane-divider.horizontal");
-    const layout = document.querySelector(".terminal-layout");
-    const leftCol = document.querySelector(".left-column");
-
-    if (vDiv && layout) {
-      let dragging = false;
-      vDiv.addEventListener("mousedown", (e) => {
-        e.preventDefault(); dragging = true; vDiv.classList.add("dragging");
-        document.body.style.cursor = "col-resize"; document.body.style.userSelect = "none";
-      });
-      document.addEventListener("mousemove", (e) => {
-        if (!dragging) return;
-        const rect = layout.getBoundingClientRect();
-        const pct = ((e.clientX - rect.left) / rect.width) * 100;
-        const clamped = Math.max(20, Math.min(80, pct));
-        leftCol.style.flex = `0 0 ${clamped}%`; leftCol.style.maxWidth = `${clamped}%`;
-        const xsdbPane = document.querySelector(".pane-half");
-        if (xsdbPane) { xsdbPane.style.flex = `0 0 ${100 - clamped}%`; xsdbPane.style.maxWidth = `${100 - clamped}%`; }
-        fitAllTerminals();
-      });
-      document.addEventListener("mouseup", () => {
-        if (!dragging) return;
-        dragging = false; vDiv.classList.remove("dragging");
-        document.body.style.cursor = ""; document.body.style.userSelect = "";
-        fitAllTerminals();
-      });
-    }
-
-    const hDivs = leftCol ? leftCol.querySelectorAll(".pane-divider.horizontal") : [];
-    hDivs.forEach((hd, divIdx) => {
-      let dragging = false;
-      hd.addEventListener("mousedown", (e) => {
-        e.preventDefault(); dragging = true; hd.classList.add("dragging");
-        document.body.style.cursor = "row-resize"; document.body.style.userSelect = "none";
-      });
-      document.addEventListener("mousemove", (e) => {
-        if (!dragging) return;
-        const panes = leftCol.querySelectorAll(".terminal-pane");
-        if (panes.length < 2) return;
-        const rect = leftCol.getBoundingClientRect();
-        const totalH = rect.height;
-        const yPct = ((e.clientY - rect.top) / totalH) * 100;
-        const clamped = Math.max(10, Math.min(90, yPct));
-        if (panes.length === 3 && divIdx === 0) {
-          panes[0].style.flex = `0 0 ${clamped}%`; panes[0].style.maxHeight = `${clamped}%`;
-        } else if (panes.length === 3 && divIdx === 1) {
-          const remaining = 100 - parseFloat(panes[0].style.flex?.split(" ")[2]) || 33;
-          panes[2].style.flex = `0 0 ${100 - clamped}%`; panes[2].style.maxHeight = `${100 - clamped}%`;
-        } else if (panes.length === 2) {
-          panes[0].style.flex = `0 0 ${clamped}%`; panes[0].style.maxHeight = `${clamped}%`;
-          panes[1].style.flex = `0 0 ${100 - clamped}%`; panes[1].style.maxHeight = `${100 - clamped}%`;
-        }
-        fitAllTerminals();
-      });
-      document.addEventListener("mouseup", () => {
-        if (!dragging) return;
-        dragging = false; hd.classList.remove("dragging");
-        document.body.style.cursor = ""; document.body.style.userSelect = "";
-        fitAllTerminals();
-      });
-    });
   }
 
   // -- Terminal creation -----------------------------------------------
