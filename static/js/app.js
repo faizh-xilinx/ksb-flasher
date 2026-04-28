@@ -69,6 +69,8 @@
   const $powerLabel    = $("power-label");
   const $powerOffBtn   = $("power-off-btn");
   const $powerOnBtn    = $("power-on-btn");
+  const $sshDot        = $("ssh-dot");
+  const $sshLabel      = $("ssh-label");
 
   // -- State -----------------------------------------------------------
 
@@ -766,7 +768,8 @@
   async function pollPowerStatus() {
     clearInterval(powerPollTimer);
     await fetchPowerStatus();
-    powerPollTimer = setInterval(fetchPowerStatus, 15000);
+    await fetchSshStatus();
+    powerPollTimer = setInterval(() => { fetchPowerStatus(); fetchSshStatus(); }, 15000);
   }
 
   async function fetchPowerStatus() {
@@ -789,6 +792,23 @@
     else { $powerLabel.textContent = "PWR?"; }
   }
 
+  async function fetchSshStatus() {
+    if (!state.connParams) { setSshDisplay(false); return; }
+    const { host, jumpHost, jumpUser, password } = state.connParams;
+    try {
+      const result = await (await fetch("/api/ssh-ready", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ host, jumpHost, jumpUser, password }),
+      })).json();
+      setSshDisplay(result.ready);
+    } catch { setSshDisplay(false); }
+  }
+
+  function setSshDisplay(ready) {
+    $sshDot.className = "power-dot " + (ready ? "on" : "off");
+    $sshLabel.textContent = ready ? "SSH" : "SSH?";
+  }
+
   async function handlePowerOff() {
     const p = getIdracParams();
     if (!p) return;
@@ -800,6 +820,7 @@
         body: JSON.stringify(p),
       })).json();
       if (!result.ok) alert("Power Off failed: " + result.error);
+      setSshDisplay(false);
       setTimeout(fetchPowerStatus, 3000);
     } catch (err) { alert("Power Off error: " + err.message); }
     finally { $powerOffBtn.disabled = false; }
@@ -827,6 +848,7 @@
     clearInterval(sshReadyTimer);
     if (!state.connParams) return;
     $powerLabel.textContent = "BOOT";
+    setSshDisplay(false);
     let attempts = 0;
 
     sshReadyTimer = setInterval(async () => {
@@ -840,6 +862,7 @@
         })).json();
         if (result.ready) {
           clearInterval(sshReadyTimer);
+          setSshDisplay(true);
           fetchPowerStatus();
           try {
             new Notification("KSB Flasher - Host Ready", {
