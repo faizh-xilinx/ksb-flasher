@@ -442,6 +442,7 @@
     }
     state.terminals = {}; state.connected = false; state.connParams = null;
     clearInterval(powerPollTimer);
+    clearInterval(sshReadyTimer);
     $uploadOverlay.classList.add("hidden"); $searchBar.classList.add("hidden");
     $termScreen.classList.remove("active"); $connectScreen.classList.add("active");
     $statusBar.textContent = "Disconnected"; $macroBar.innerHTML = "";
@@ -815,8 +816,41 @@
       })).json();
       if (!result.ok) alert("Power On failed: " + result.error);
       setTimeout(fetchPowerStatus, 3000);
+      startSshReadyWatch();
     } catch (err) { alert("Power On error: " + err.message); }
     finally { $powerOnBtn.disabled = false; }
+  }
+
+  let sshReadyTimer = null;
+
+  function startSshReadyWatch() {
+    clearInterval(sshReadyTimer);
+    if (!state.connParams) return;
+    $powerLabel.textContent = "BOOT";
+    let attempts = 0;
+
+    sshReadyTimer = setInterval(async () => {
+      attempts++;
+      if (attempts > 60) { clearInterval(sshReadyTimer); return; }
+      const { host, jumpHost, jumpUser, password } = state.connParams;
+      try {
+        const result = await (await fetch("/api/ssh-ready", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ host, jumpHost, jumpUser, password }),
+        })).json();
+        if (result.ready) {
+          clearInterval(sshReadyTimer);
+          fetchPowerStatus();
+          try {
+            new Notification("KSB Flasher - Host Ready", {
+              body: `${host} is now SSH-reachable`,
+              tag: "ssh-ready",
+            });
+          } catch {}
+          $statusBar.textContent = "Host SSH ready";
+        }
+      } catch {}
+    }, 10000);
   }
 
   // -- Theme toggle ----------------------------------------------------

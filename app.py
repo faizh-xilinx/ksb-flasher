@@ -292,6 +292,49 @@ async def upload_file(request):
 
 
 # ---------------------------------------------------------------------------
+# SSH readiness check
+# ---------------------------------------------------------------------------
+
+async def ssh_ready_check(request):
+    """Check if SSH port is reachable on the target host (via jump host)."""
+    data = await request.json()
+    host = data.get("host", "")
+    jump_user = data.get("jumpUser") or None
+    jump_host = data.get("jumpHost") or None
+    password = data.get("password") or None
+
+    if not host:
+        return web.json_response({"ready": False})
+
+    conn = None
+    try:
+        if jump_host:
+            conn = await asyncio.wait_for(
+                _connect_jump(jump_host, jump_user, password), timeout=10
+            )
+            result = await asyncio.wait_for(
+                conn.run(
+                    f"bash -c 'echo > /dev/tcp/{host}/22' 2>/dev/null && echo READY || echo NOPE",
+                    check=False,
+                ),
+                timeout=8,
+            )
+            ready = "READY" in (result.stdout or "")
+        else:
+            conn = await asyncio.wait_for(
+                _connect_jump(host, jump_user, password), timeout=8
+            )
+            ready = True
+    except Exception:
+        ready = False
+    finally:
+        if conn:
+            conn.close()
+
+    return web.json_response({"ready": ready})
+
+
+# ---------------------------------------------------------------------------
 # iDRAC Redfish power control
 # ---------------------------------------------------------------------------
 
@@ -515,6 +558,7 @@ def create_app():
     app.router.add_get("/api/defaults", get_defaults)
     app.router.add_post("/api/preflight", preflight_check)
     app.router.add_post("/api/upload", upload_file)
+    app.router.add_post("/api/ssh-ready", ssh_ready_check)
     app.router.add_post("/api/idrac/status", idrac_status)
     app.router.add_post("/api/idrac/poweron", idrac_poweron)
     app.router.add_post("/api/idrac/poweroff", idrac_poweroff)
