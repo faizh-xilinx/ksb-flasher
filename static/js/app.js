@@ -784,8 +784,16 @@
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify(p),
       })).json();
-      if (result.ok) setPowerDisplay(result.power);
-      else setPowerDisplay("error");
+      if (result.ok) {
+        setPowerDisplay(result.power);
+        if (result.hostname) {
+          const cur = $toolbarHost.textContent;
+          const tag = `iDRAC: ${state.connParams.idracHost}`;
+          if (cur.includes(tag) && !cur.includes(result.hostname)) {
+            $toolbarHost.textContent = cur.replace(tag, `iDRAC: ${result.hostname} (${state.connParams.idracHost})`);
+          }
+        }
+      } else setPowerDisplay("error");
     } catch { setPowerDisplay("error"); }
   }
 

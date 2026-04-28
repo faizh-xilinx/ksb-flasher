@@ -369,7 +369,8 @@ async def idrac_status(request):
     try:
         status, data = await _idrac_request("GET", host, REDFISH_SYSTEM, user, pw)
         power = data.get("PowerState", "Unknown")
-        return web.json_response({"ok": True, "power": power})
+        hostname = data.get("HostName", "")
+        return web.json_response({"ok": True, "power": power, "hostname": hostname})
     except Exception as exc:
         return web.json_response({"ok": False, "error": str(exc)})
 
