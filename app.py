@@ -55,12 +55,12 @@ DEFAULT_MACROS = {
     "xsdb": [
         {"label": "Targets", "command": "targets\n"},
         {"label": "Reset System", "command": "targets -set -filter {name =~ \"*PMC*\"}; rst -system; source run.tcl\n"},
-        {"label": "Program PDI", "command": "targets -set -filter {name =~ \"*PMC*\"}; device program design_1_wrapper.pdi\n"},
+        {"label": "Program PDI", "command": "targets -set -filter {name =~ \"*PMC*\"}; source run.tcl\n"},
         {"label": "Load All FW", "command": "ta 7; dow -f cmc_fw.elf; con; ta 4; dow -f nmc_fw.elf; con; ta 5; dow -f sec_fw.elf; con\n"},
         {"label": "Load CMC", "command": "ta 7; dow -f cmc_fw.elf; con\n"},
         {"label": "Load NMC", "command": "ta 4; dow -f nmc_fw.elf; con\n"},
         {"label": "Load SEC", "command": "ta 5; dow -f sec_fw.elf; con\n"},
-        {"label": "Full Flash", "command": "targets -set -filter {name =~ \"*PMC*\"}; rst -system; source run.tcl; targets -set -filter {name =~ \"*PMC*\"}; device program design_1_wrapper.pdi; ta 7; dow -f cmc_fw.elf; con; ta 4; dow -f nmc_fw.elf; con; ta 5; dow -f sec_fw.elf; con\n"},
+        {"label": "Full Flash", "command": "targets -set -filter {name =~ \"*PMC*\"}; rst -system; source run.tcl; targets -set -filter {name =~ \"*PMC*\"}; source run.tcl; ta 7; dow -f cmc_fw.elf; con; ta 4; dow -f nmc_fw.elf; con; ta 5; dow -f sec_fw.elf; con\n"},
     ],
 }
 

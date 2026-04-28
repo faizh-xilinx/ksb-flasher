@@ -69,7 +69,7 @@ install.bat --fresh    # full reinstall if needed
 |---|---|
 | Targets | `targets` |
 | Reset System | `targets -set -filter {name =~ "*PMC*"}; rst -system; source run.tcl` |
-| Program PDI | `targets -set -filter {name =~ "*PMC*"}; device program design_1_wrapper.pdi` |
+| Program PDI | `targets -set -filter {name =~ "*PMC*"}; source run.tcl` |
 | Load All FW | `ta 7; dow -f cmc_fw.elf; con; ta 4; dow -f nmc_fw.elf; con; ta 5; dow -f sec_fw.elf; con` |
 | Load CMC | `ta 7; dow -f cmc_fw.elf; con` |
 | Load NMC | `ta 4; dow -f nmc_fw.elf; con` |
