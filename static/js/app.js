@@ -430,7 +430,8 @@
     $connectScreen.classList.remove("active");
     $termScreen.classList.add("active");
     const via = jumpHost ? ` via ${jumpUser ? jumpUser + "@" : ""}${jumpHost}` : "";
-    $toolbarHost.textContent = `${targetUser ? targetUser + "@" : ""}${host}${via}`;
+    const idracLabel = idracHost ? ` | iDRAC: ${idracHost}` : "";
+    $toolbarHost.textContent = `${targetUser ? targetUser + "@" : ""}${host}${via}${idracLabel}`;
 
     buildMacroBar();
     await createAllTerminals();
