@@ -161,12 +161,31 @@ async def _connect_jump(jump_host, username=None, password=None):
 # Session logging
 # ---------------------------------------------------------------------------
 
+MAX_LOGS_SIZE = 2 * 1024 * 1024  # 2 MB
+
+
+def _prune_logs():
+    """Delete oldest logs in FIFO order when total size exceeds MAX_LOGS_SIZE."""
+    if not LOGS_DIR.exists():
+        return
+    logs = sorted(LOGS_DIR.glob("*.log"), key=lambda f: f.stat().st_mtime)
+    total = sum(f.stat().st_size for f in logs)
+    while total > MAX_LOGS_SIZE and logs:
+        oldest = logs.pop(0)
+        total -= oldest.stat().st_size
+        oldest.unlink(missing_ok=True)
+
+
 def _open_log(session_name, host):
     LOGS_DIR.mkdir(parents=True, exist_ok=True)
+    _prune_logs()
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
     safe_host = host.replace(".", "_").replace("/", "_")
     path = LOGS_DIR / f"{ts}_{safe_host}_{session_name}.log"
-    return open(path, "wb")
+    f = open(path, "wb")
+    header = f"=== KSB Flasher Log ===\nSession: {session_name}\nHost: {host}\nStarted: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n{'=' * 40}\n\n"
+    f.write(header.encode("utf-8"))
+    return f
 
 
 # ---------------------------------------------------------------------------
@@ -536,6 +555,8 @@ async def ws_terminal(request):
 
         await ws.send_str(json.dumps({"type": "status", "status": "connected"}))
 
+        last_ts = [0.0]
+
         async def _reader():
             try:
                 while not process.stdout.at_eof():
@@ -543,6 +564,11 @@ async def ws_terminal(request):
                     if data and not ws.closed:
                         await ws.send_bytes(data)
                         if log_file:
+                            now = asyncio.get_event_loop().time()
+                            if now - last_ts[0] > 30:
+                                ts_line = f"\n[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}]\n"
+                                log_file.write(ts_line.encode("utf-8"))
+                                last_ts[0] = now
                             log_file.write(data)
             except (asyncssh.Error, ConnectionError, OSError):
                 pass
