@@ -1,16 +1,25 @@
 # KSB Flasher
 
-A web-based multi-terminal application for programming firmware images on SmartNIC cards. Opens three SSH sessions to a remote lab machine through a jump host, all in a single window.
+A web-based multi-terminal application for programming firmware images on AMD SmartNIC cards. Opens four SSH sessions to a remote lab machine through a jump host, with integrated iDRAC power control -- all in a single window.
 
 ## Layout
 
+**Default (3-pane):**
 ```
 +------------------+---------------------+
 |  SEC Minicom     |                     |
+|                  |    APU UART         |
 +--  resizable  ---+                     |
-|  NMC Minicom     |    XSDB Session     |
-+--  resizable  ---+    (right half)     |
-|  APU UART        |                     |
+|  NMC Minicom     |                     |
++------------------+---------------------+
+```
+
+**XSDB enabled (4-quad):**
+```
++------------------+---------------------+
+|  SEC Minicom     |  NMC Minicom        |
++--  resizable  ---+--  resizable  ------+
+|  APU UART        |  XSDB Session       |
 +------------------+---------------------+
 ```
 
@@ -22,11 +31,11 @@ cd ksb-flasher
 install.bat
 ```
 
-The installer downloads a portable Python, installs dependencies, builds a standalone `KSB_Flasher.exe`, and creates a desktop shortcut. No admin rights needed.
+The installer downloads a portable Python, installs dependencies, builds a standalone `KSB_Flasher.exe` (~13.5 MB), and creates a desktop shortcut. No admin rights needed.
 
 ### Updating
 
-After pulling new changes, just run `install.bat` again. It auto-detects the existing installation and does a fast update (copies new files + rebuilds the .exe, skips Python/deps).
+Run `install.bat` again after pulling new changes. It auto-detects the existing installation and does a fast update (~35s) -- only copies new files and rebuilds the .exe, skipping Python/deps.
 
 ```
 git pull
@@ -39,23 +48,35 @@ install.bat --fresh    # full reinstall if needed
 ### Connection
 - **Jump host support** -- SSH through a gateway to reach lab machines on internal networks
 - **Separate user logins** -- different users for jump host (e.g. `faizh`) and target (e.g. `root`)
-- **Connection history** -- remembers hosts, users, and customized commands per connection
+- **Connection history** -- remembers hosts, users, commands, and iDRAC credentials per connection
 - **Connection profiles** -- save/load named profiles (e.g. "NDR730J B0 PDI") from a dropdown
-- **Export/Import config** -- share a `.json` config file with teammates
+- **Export/Import config** -- share a `.json` config file with teammates for identical setup
 
 ### Terminals
-- **Live terminals** -- full interactive PTY via xterm.js (colors, special keys, scrollback)
-- **Resizable panes** -- drag the dividers to resize SEC/NMC/XSDB panes
+- **4 terminal sessions** -- SEC Minicom, NMC Minicom, APU UART, and XSDB (togglable)
+- **XSDB toggle** -- switch between 3-pane (SEC/NMC + APU) and 4-quad layout via toolbar button
+- **Live terminals** -- full interactive PTY via xterm.js (colors, special keys, 10K line scrollback)
+- **Resizable panes** -- drag dividers between panes to resize
 - **Terminal search** -- Ctrl+F to search scrollback, Enter/Shift+Enter for next/prev match
-- **Font zoom** -- Ctrl+/- or toolbar buttons (8-24px), Ctrl+0 to reset
-- **Dark/Light theme** -- toggle in toolbar, persists across sessions
+- **Font zoom** -- Ctrl+/- or toolbar buttons (8-24px range), Ctrl+0 to reset
+- **Dark/Light theme** -- toggle in toolbar, preference persists across sessions
 - **Reconnect per-pane** -- reconnect a single dropped session without affecting others
+- **AMD logo watermark** -- faded AMD branding in each terminal pane background
+
+### iDRAC Power Control
+- **Power On / Power Off** -- control host power directly via iDRAC Redfish REST API
+- **Power status indicator** -- real-time green/red dot showing host power state (polls every 15s)
+- **SSH readiness indicator** -- green when target host SSH port is reachable, red during boot
+- **SSH-ready notification** -- desktop notification when host becomes SSH-reachable after power on
+- **iDRAC hostname display** -- shows system hostname from iDRAC alongside IP in toolbar
+- **Credential persistence** -- iDRAC host, username, and password saved with connection history
+- **Power macro buttons** -- Power Off (red) and Power On (green) in the macro bar
 
 ### Automation
-- **Macro buttons** -- one-click command buttons grouped by pane (XSDB: Reset System, Program PDI, Load All FW, etc.)
+- **Macro buttons** -- one-click command buttons grouped by pane in a toolbar bar
 - **Dynamic PMC target** -- macros auto-select the PMC target via `targets -set -filter {name =~ "*PMC*"}` instead of hardcoded target numbers
-- **Broadcast input** -- BCAST toggle sends keystrokes to all three panes simultaneously
-- **Watch patterns** -- comma-separated strings (e.g. `DONE, ERROR`); triggers a desktop notification when matched
+- **Broadcast input** -- BCAST toggle sends keystrokes to all panes simultaneously
+- **Watch patterns** -- comma-separated strings (e.g. `DONE, ERROR`); triggers desktop notification on match
 - **Editable commands** -- modify startup commands for each terminal before connecting
 
 ### Operations
@@ -75,8 +96,36 @@ install.bat --fresh    # full reinstall if needed
 | Load SEC | `ta 5; dow -f sec_fw.elf; con` |
 | Full Flash | Reset + Program PDI + Load All FW in sequence |
 
+## Complete Firmware Programming Workflow
+
+```
+1. Launch KSB_Flasher.exe
+2. Enter connection details (or click a saved history/profile)
+   - Jump host, target host, users
+   - iDRAC host, user, password
+3. Click Connect
+4. Click "Power Off" (macro bar or toolbar) -- host powers down
+5. Wait for power indicator to show OFF
+6. Click "XSDB" toggle to show XSDB pane
+7. Click "Program PDI" or "Full Flash" macro
+8. Click "Power On" -- host boots
+9. Watch SSH indicator go green + desktop notification
+10. Monitor boot on SEC/NMC/APU UART panes
+```
+
+## Keyboard Shortcuts
+
+| Shortcut | Action |
+|---|---|
+| Ctrl+F | Search terminal scrollback |
+| Ctrl++ / Ctrl+- | Increase/decrease font size |
+| Ctrl+0 | Reset font size to default |
+| Enter (in search) | Next match |
+| Shift+Enter (in search) | Previous match |
+| Esc | Close search bar |
+
 ## Requirements
 
 - Windows 10/11
 - SSH key access to the jump host (`~/.ssh/id_rsa`)
-- Network access to the jump host
+- Network access to the jump host and iDRAC
