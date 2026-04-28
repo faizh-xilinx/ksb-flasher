@@ -500,6 +500,39 @@ html, body {
   color: var(--error);
 }
 
+.toolbar-btn-power-off:hover {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: var(--error);
+}
+
+.toolbar-btn-power-on:hover {
+  background: rgba(16, 185, 129, 0.1);
+  border-color: rgba(16, 185, 129, 0.3);
+  color: var(--success);
+}
+
+.power-status {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-dim);
+  letter-spacing: 0.3px;
+}
+
+.power-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--text-dim);
+}
+
+.power-dot.on  { background: var(--success); }
+.power-dot.off { background: var(--error); }
+
 .toolbar-toggle {
   cursor: pointer;
   user-select: none;
@@ -560,6 +593,26 @@ html, body {
 .macro-btn:hover {
   background: rgba(0, 212, 255, 0.15);
   border-color: rgba(0, 212, 255, 0.35);
+}
+
+.macro-btn-danger {
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.2);
+  color: var(--error);
+}
+.macro-btn-danger:hover {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+.macro-btn-success {
+  background: rgba(16, 185, 129, 0.08);
+  border-color: rgba(16, 185, 129, 0.2);
+  color: var(--success);
+}
+.macro-btn-success:hover {
+  background: rgba(16, 185, 129, 0.2);
+  border-color: rgba(16, 185, 129, 0.4);
 }
 
 /* ── Upload overlay ─────────────────────────────────────────────────── */

@@ -14,6 +14,9 @@ import webbrowser
 from pathlib import Path
 from datetime import datetime, timezone
 
+import ssl
+
+import aiohttp as aiohttp_client
 from aiohttp import web, WSMsgType
 import asyncssh
 
@@ -289,6 +292,82 @@ async def upload_file(request):
 
 
 # ---------------------------------------------------------------------------
+# iDRAC Redfish power control
+# ---------------------------------------------------------------------------
+
+_IDRAC_SSL = ssl.create_default_context()
+_IDRAC_SSL.check_hostname = False
+_IDRAC_SSL.verify_mode = ssl.CERT_NONE
+
+REDFISH_SYSTEM = "/redfish/v1/Systems/System.Embedded.1"
+REDFISH_RESET = REDFISH_SYSTEM + "/Actions/ComputerSystem.Reset"
+
+
+async def _idrac_request(method, idrac_host, path, idrac_user, idrac_pass, json_body=None):
+    url = f"https://{idrac_host}{path}"
+    auth = aiohttp_client.BasicAuth(idrac_user, idrac_pass)
+    async with aiohttp_client.ClientSession(auth=auth, connector=aiohttp_client.TCPConnector(ssl=_IDRAC_SSL)) as sess:
+        async with sess.request(method, url, json=json_body, timeout=aiohttp_client.ClientTimeout(total=15)) as resp:
+            text = await resp.text()
+            try:
+                data = json.loads(text)
+            except json.JSONDecodeError:
+                data = {}
+            return resp.status, data
+
+
+async def idrac_status(request):
+    body = await request.json()
+    host = body.get("idracHost", "")
+    user = body.get("idracUser", "root")
+    pw = body.get("idracPass", "")
+    if not host:
+        return web.json_response({"ok": False, "error": "No iDRAC host configured"})
+    try:
+        status, data = await _idrac_request("GET", host, REDFISH_SYSTEM, user, pw)
+        power = data.get("PowerState", "Unknown")
+        return web.json_response({"ok": True, "power": power})
+    except Exception as exc:
+        return web.json_response({"ok": False, "error": str(exc)})
+
+
+async def idrac_poweron(request):
+    body = await request.json()
+    host = body.get("idracHost", "")
+    user = body.get("idracUser", "root")
+    pw = body.get("idracPass", "")
+    if not host:
+        return web.json_response({"ok": False, "error": "No iDRAC host configured"})
+    try:
+        status, data = await _idrac_request(
+            "POST", host, REDFISH_RESET, user, pw, {"ResetType": "On"}
+        )
+        if status in (200, 204):
+            return web.json_response({"ok": True, "message": "Power On sent"})
+        return web.json_response({"ok": False, "error": data.get("error", {}).get("message", f"HTTP {status}")})
+    except Exception as exc:
+        return web.json_response({"ok": False, "error": str(exc)})
+
+
+async def idrac_poweroff(request):
+    body = await request.json()
+    host = body.get("idracHost", "")
+    user = body.get("idracUser", "root")
+    pw = body.get("idracPass", "")
+    if not host:
+        return web.json_response({"ok": False, "error": "No iDRAC host configured"})
+    try:
+        status, data = await _idrac_request(
+            "POST", host, REDFISH_RESET, user, pw, {"ResetType": "ForceOff"}
+        )
+        if status in (200, 204):
+            return web.json_response({"ok": True, "message": "Power Off sent"})
+        return web.json_response({"ok": False, "error": data.get("error", {}).get("message", f"HTTP {status}")})
+    except Exception as exc:
+        return web.json_response({"ok": False, "error": str(exc)})
+
+
+# ---------------------------------------------------------------------------
 # WebSocket - SSH bridge
 # ---------------------------------------------------------------------------
 
@@ -436,6 +515,9 @@ def create_app():
     app.router.add_get("/api/defaults", get_defaults)
     app.router.add_post("/api/preflight", preflight_check)
     app.router.add_post("/api/upload", upload_file)
+    app.router.add_post("/api/idrac/status", idrac_status)
+    app.router.add_post("/api/idrac/poweron", idrac_poweron)
+    app.router.add_post("/api/idrac/poweroff", idrac_poweroff)
     app.router.add_get("/ws/terminal", ws_terminal)
 
     app.router.add_static("/static", STATIC_DIR)

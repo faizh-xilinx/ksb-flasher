@@ -62,6 +62,13 @@
   const $exportBtn     = $("export-config-btn");
   const $importBtn     = $("import-config-btn");
   const $importFile    = $("import-config-file");
+  const $idracHost     = $("idrac-host-input");
+  const $idracUser     = $("idrac-user-input");
+  const $idracPass     = $("idrac-pass-input");
+  const $powerDot      = $("power-dot");
+  const $powerLabel    = $("power-label");
+  const $powerOffBtn   = $("power-off-btn");
+  const $powerOnBtn    = $("power-on-btn");
 
   // -- State -----------------------------------------------------------
 
@@ -228,6 +235,10 @@
     $exportBtn.addEventListener("click", exportConfig);
     $importBtn.addEventListener("click", () => $importFile.click());
     $importFile.addEventListener("change", importConfig);
+
+    // iDRAC power control
+    $powerOffBtn.addEventListener("click", handlePowerOff);
+    $powerOnBtn.addEventListener("click", handlePowerOn);
   }
 
   // -- Profiles --------------------------------------------------------
@@ -266,6 +277,8 @@
     }
     if (p.macros) state.macros = p.macros;
     if (p.watchPatterns) $watchPatterns.value = p.watchPatterns;
+    if (p.idracHost) $idracHost.value = p.idracHost;
+    if (p.idracUser) $idracUser.value = p.idracUser;
     $profileName.value = name;
   }
 
@@ -285,6 +298,8 @@
       },
       macros: state.macros,
       watchPatterns: $watchPatterns.value.trim(),
+      idracHost: $idracHost.value.trim(),
+      idracUser: $idracUser.value.trim(),
     };
     localStorage.setItem(PROFILES_KEY, JSON.stringify(state.profiles));
     renderProfileDropdown();
@@ -352,6 +367,8 @@
           if (entry.commands.xsdb) $cmdXsdb.value = entry.commands.xsdb.join("\n");
         }
         if (entry.macros) state.macros = entry.macros;
+        if (entry.idracHost) $idracHost.value = entry.idracHost;
+        if (entry.idracUser) $idracUser.value = entry.idracUser;
         $hostInput.focus();
       });
 
@@ -392,12 +409,16 @@
       if (!result.ok) { showError(result.error); setConnecting(false); return; }
     } catch (err) { showError("Pre-flight failed: " + err.message); setConnecting(false); return; }
 
-    state.connParams = { host, jumpHost, jumpUser, targetUser, password, commands };
+    const idracHost = $idracHost.value.trim() || undefined;
+    const idracUser = $idracUser.value.trim() || "root";
+    const idracPass = $idracPass.value || undefined;
+
+    state.connParams = { host, jumpHost, jumpUser, targetUser, password, commands, idracHost, idracUser, idracPass };
 
     try {
       state.history = await (await fetch("/api/history", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ host, jumpUser, targetUser, jumpHost, commands, macros: state.macros }),
+        body: JSON.stringify({ host, jumpUser, targetUser, jumpHost, commands, macros: state.macros, idracHost, idracUser }),
       })).json();
     } catch {}
 
@@ -411,6 +432,7 @@
     connectAllTerminals();
     state.connected = true;
     setConnecting(false);
+    if (idracHost) pollPowerStatus();
   }
 
   function handleDisconnect() {
@@ -419,6 +441,7 @@
       if (t) { if (t.ws && t.ws.readyState <= WebSocket.OPEN) t.ws.close(); if (t.term) t.term.dispose(); }
     }
     state.terminals = {}; state.connected = false; state.connParams = null;
+    clearInterval(powerPollTimer);
     $uploadOverlay.classList.add("hidden"); $searchBar.classList.add("hidden");
     $termScreen.classList.remove("active"); $connectScreen.classList.add("active");
     $statusBar.textContent = "Disconnected"; $macroBar.innerHTML = "";
@@ -429,6 +452,25 @@
 
   function buildMacroBar() {
     $macroBar.innerHTML = "";
+
+    if (state.connParams && state.connParams.idracHost) {
+      const label = document.createElement("span");
+      label.className = "macro-group-label"; label.textContent = "POWER";
+      $macroBar.appendChild(label);
+
+      const offBtn = document.createElement("button");
+      offBtn.className = "macro-btn macro-btn-danger"; offBtn.textContent = "Power Off";
+      offBtn.title = "Power off host via iDRAC";
+      offBtn.addEventListener("click", handlePowerOff);
+      $macroBar.appendChild(offBtn);
+
+      const onBtn = document.createElement("button");
+      onBtn.className = "macro-btn macro-btn-success"; onBtn.textContent = "Power On";
+      onBtn.title = "Power on host via iDRAC";
+      onBtn.addEventListener("click", handlePowerOn);
+      $macroBar.appendChild(onBtn);
+    }
+
     for (const name of TERMINAL_DEFS) {
       const macros = state.macros[name];
       if (!macros || macros.length === 0) continue;
@@ -709,6 +751,74 @@
     $connectBtn.innerHTML = busy ? "Connecting\u2026" : '<svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6,3 16,9 6,15"/></svg> Connect';
   }
 
+  // -- iDRAC power control ---------------------------------------------
+
+  let powerPollTimer = null;
+
+  function getIdracParams() {
+    if (!state.connParams) return null;
+    const { idracHost, idracUser, idracPass } = state.connParams;
+    if (!idracHost) return null;
+    return { idracHost, idracUser: idracUser || "root", idracPass: idracPass || "" };
+  }
+
+  async function pollPowerStatus() {
+    clearInterval(powerPollTimer);
+    await fetchPowerStatus();
+    powerPollTimer = setInterval(fetchPowerStatus, 15000);
+  }
+
+  async function fetchPowerStatus() {
+    const p = getIdracParams();
+    if (!p) { setPowerDisplay("unknown"); return; }
+    try {
+      const result = await (await fetch("/api/idrac/status", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(p),
+      })).json();
+      if (result.ok) setPowerDisplay(result.power);
+      else setPowerDisplay("error");
+    } catch { setPowerDisplay("error"); }
+  }
+
+  function setPowerDisplay(power) {
+    $powerDot.className = "power-dot";
+    if (power === "On") { $powerDot.classList.add("on"); $powerLabel.textContent = "ON"; }
+    else if (power === "Off") { $powerDot.classList.add("off"); $powerLabel.textContent = "OFF"; }
+    else { $powerLabel.textContent = "PWR?"; }
+  }
+
+  async function handlePowerOff() {
+    const p = getIdracParams();
+    if (!p) return;
+    if (!confirm("Power OFF the host via iDRAC?")) return;
+    $powerOffBtn.disabled = true;
+    try {
+      const result = await (await fetch("/api/idrac/poweroff", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(p),
+      })).json();
+      if (!result.ok) alert("Power Off failed: " + result.error);
+      setTimeout(fetchPowerStatus, 3000);
+    } catch (err) { alert("Power Off error: " + err.message); }
+    finally { $powerOffBtn.disabled = false; }
+  }
+
+  async function handlePowerOn() {
+    const p = getIdracParams();
+    if (!p) return;
+    $powerOnBtn.disabled = true;
+    try {
+      const result = await (await fetch("/api/idrac/poweron", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(p),
+      })).json();
+      if (!result.ok) alert("Power On failed: " + result.error);
+      setTimeout(fetchPowerStatus, 3000);
+    } catch (err) { alert("Power On error: " + err.message); }
+    finally { $powerOnBtn.disabled = false; }
+  }
+
   // -- Theme toggle ----------------------------------------------------
 
   function toggleTheme(force) {
@@ -748,6 +858,8 @@
       commands: { sec: parseCommands($cmdSec.value), nmc: parseCommands($cmdNmc.value), apu: parseCommands($cmdApu.value), xsdb: parseCommands($cmdXsdb.value) },
       macros: state.macros,
       watchPatterns: $watchPatterns.value.trim(),
+      idracHost: $idracHost.value.trim(),
+      idracUser: $idracUser.value.trim(),
       profiles: state.profiles,
     };
     const blob = new Blob([JSON.stringify(config, null, 2)], { type: "application/json" });
@@ -777,6 +889,8 @@
         }
         if (config.macros) state.macros = config.macros;
         if (config.watchPatterns) $watchPatterns.value = config.watchPatterns;
+        if (config.idracHost) $idracHost.value = config.idracHost;
+        if (config.idracUser) $idracUser.value = config.idracUser;
         if (config.profiles) {
           Object.assign(state.profiles, config.profiles);
           localStorage.setItem(PROFILES_KEY, JSON.stringify(state.profiles));

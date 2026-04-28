@@ -109,6 +109,25 @@
           <input type="password" id="pass-input" placeholder="SSH key auth by default" autocomplete="off" />
         </div>
 
+        <div class="form-group">
+          <label for="idrac-host-input">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M2 2a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V2zm2 1v2h1V3H4zm3 0v2h1V3H7zM2 9a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V9zm2 1v2h1v-2H4zm3 0v2h1v-2H7z"/></svg>
+            iDRAC Host <span class="optional">(optional - for power control)</span>
+          </label>
+          <input type="text" id="idrac-host-input" placeholder="e.g. idrac-ndr730j or 10.x.x.x" autocomplete="off" spellcheck="false" />
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="idrac-user-input">iDRAC User</label>
+            <input type="text" id="idrac-user-input" placeholder="e.g. root" autocomplete="off" spellcheck="false" />
+          </div>
+          <div class="form-group">
+            <label for="idrac-pass-input">iDRAC Password</label>
+            <input type="password" id="idrac-pass-input" placeholder="e.g. calvin" autocomplete="off" />
+          </div>
+        </div>
+
         <button class="cmd-toggle" id="cmd-toggle" type="button">
           <svg class="chevron" width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 5 7 8 10 5"/></svg>
           Customize Commands
@@ -205,6 +224,20 @@
           <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M14 8a6 6 0 1 1-12 0 6 6 0 0 1 12 0z"/><circle cx="8" cy="8" r="2.5" fill="currentColor" stroke="none"/></svg>
           LOG
         </label>
+        <span class="toolbar-separator">|</span>
+        <span class="power-status" id="power-status" title="Host power state">
+          <span class="power-dot" id="power-dot"></span>
+          <span id="power-label">PWR?</span>
+        </span>
+        <button class="toolbar-btn toolbar-btn-power-off" id="power-off-btn" title="Power off host via iDRAC">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 1v6"/><path d="M4.2 3.8a6 6 0 1 0 7.6 0"/></svg>
+          Off
+        </button>
+        <button class="toolbar-btn toolbar-btn-power-on" id="power-on-btn" title="Power on host via iDRAC">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 1v6"/><path d="M4.2 3.8a6 6 0 1 0 7.6 0"/></svg>
+          On
+        </button>
+        <span class="toolbar-separator">|</span>
         <button class="toolbar-btn" id="upload-btn" title="Upload file to target">
           <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 10V3m0 0L5 6m3-3 3 3M2 11v2a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-2"/></svg>
           Upload
