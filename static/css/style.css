@@ -625,30 +625,39 @@ html, body {
   display: grid;
   flex: 1;
   min-height: 0;
-  gap: 1px;
-  background: var(--border);
+  gap: 0;
 }
 
-/* Default: XSDB off -- SEC/NMC left, APU right (2 cols) */
+/* Default: SEC/NMC left, APU right */
 .terminal-grid {
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: 1fr 1fr;
+  grid-template-columns: 1fr 5px 1fr;
+  grid-template-rows: 1fr 5px 1fr;
 }
 
-.terminal-grid #pane-sec { grid-area: 1 / 1 / 2 / 2; }
-.terminal-grid #pane-nmc { grid-area: 2 / 1 / 3 / 2; }
-.terminal-grid #pane-apu { grid-area: 1 / 2 / 3 / 3; }
+.terminal-grid #pane-sec   { grid-area: 1 / 1 / 2 / 2; }
+.terminal-grid #div-h1     { grid-area: 2 / 1 / 3 / 2; }
+.terminal-grid #pane-nmc   { grid-area: 3 / 1 / 4 / 2; }
+.terminal-grid #div-v      { grid-area: 1 / 2 / 4 / 3; }
+.terminal-grid #pane-apu   { grid-area: 1 / 3 / 4 / 4; }
 
 /* XSDB on: 4 equal quarters */
 .terminal-grid.quad-mode {
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: 1fr 1fr;
+  grid-template-columns: 1fr 5px 1fr;
+  grid-template-rows: 1fr 5px 1fr;
 }
 
-.terminal-grid.quad-mode #pane-sec { grid-area: 1 / 1 / 2 / 2; }
-.terminal-grid.quad-mode #pane-nmc { grid-area: 1 / 2 / 2 / 3; }
-.terminal-grid.quad-mode #pane-apu { grid-area: 2 / 1 / 3 / 2; }
-.terminal-grid.quad-mode #pane-xsdb { grid-area: 2 / 2 / 3 / 3; }
+.terminal-grid.quad-mode #pane-sec   { grid-area: 1 / 1 / 2 / 2; }
+.terminal-grid.quad-mode #pane-nmc   { grid-area: 1 / 3 / 2 / 4; }
+.terminal-grid.quad-mode #div-h1     { grid-area: 2 / 1 / 3 / 2; }
+.terminal-grid.quad-mode #div-v      { grid-area: 1 / 2 / 4 / 3; }
+.terminal-grid.quad-mode #pane-apu   { grid-area: 3 / 1 / 4 / 2; }
+.terminal-grid.quad-mode #div-h2     { grid-area: 2 / 3 / 3 / 4; }
+.terminal-grid.quad-mode #pane-xsdb  { grid-area: 3 / 3 / 4 / 4; }
+
+/* Hide unused dividers per mode */
+.terminal-grid #div-h2 { display: none; }
+.terminal-grid.quad-mode #div-h1,
+.terminal-grid.quad-mode #div-h2 { display: block; }
 
 .terminal-pane {
   display: flex;
@@ -657,6 +666,26 @@ html, body {
   min-height: 0;
   overflow: hidden;
   background: var(--bg-primary);
+}
+
+/* Resize dividers */
+.grid-divider {
+  background: var(--border);
+  transition: background var(--transition);
+  position: relative;
+}
+
+.grid-divider-v {
+  cursor: col-resize;
+}
+
+.grid-divider-h {
+  cursor: row-resize;
+}
+
+.grid-divider:hover,
+.grid-divider.dragging {
+  background: var(--accent);
 }
 
 /* Pane header */

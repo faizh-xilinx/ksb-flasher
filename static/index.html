@@ -256,8 +256,11 @@
       </div>
     </div>
 
-    <!-- Terminal panes: 2x2 grid when XSDB on, 2-column when XSDB off -->
+    <!-- Terminal panes -->
     <div class="terminal-grid" id="terminal-grid">
+      <div class="grid-divider grid-divider-v" id="div-v"></div>
+      <div class="grid-divider grid-divider-h" id="div-h1"></div>
+      <div class="grid-divider grid-divider-h xsdb-element hidden" id="div-h2"></div>
       <div class="terminal-pane" id="pane-sec">
         <div class="pane-header">
           <span class="status-dot" id="status-sec"></span>
