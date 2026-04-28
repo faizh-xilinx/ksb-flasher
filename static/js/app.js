@@ -21,6 +21,7 @@
   const $cmdEditor     = $("cmd-editor");
   const $cmdSec        = $("cmd-sec");
   const $cmdNmc        = $("cmd-nmc");
+  const $cmdApu        = $("cmd-apu");
   const $cmdXsdb       = $("cmd-xsdb");
   const $historyList   = $("history-list");
   const $historyEmpty  = $("history-empty");
@@ -61,8 +62,8 @@
 
   // -- State -----------------------------------------------------------
 
-  const TERMINAL_DEFS = ["sec", "nmc", "xsdb"];
-  const TERMINAL_LABELS = { sec: "SEC", nmc: "NMC", xsdb: "XSDB" };
+  const TERMINAL_DEFS = ["sec", "nmc", "apu", "xsdb"];
+  const TERMINAL_LABELS = { sec: "SEC", nmc: "NMC", apu: "APU", xsdb: "XSDB" };
 
   const state = {
     connected: false,
@@ -247,6 +248,7 @@
     if (p.commands) {
       if (p.commands.sec)  $cmdSec.value  = p.commands.sec.join("\n");
       if (p.commands.nmc)  $cmdNmc.value  = p.commands.nmc.join("\n");
+      if (p.commands.apu)  $cmdApu.value  = p.commands.apu.join("\n");
       if (p.commands.xsdb) $cmdXsdb.value = p.commands.xsdb.join("\n");
     }
     if (p.macros) state.macros = p.macros;
@@ -265,6 +267,7 @@
       commands: {
         sec:  parseCommands($cmdSec.value),
         nmc:  parseCommands($cmdNmc.value),
+        apu:  parseCommands($cmdApu.value),
         xsdb: parseCommands($cmdXsdb.value),
       },
       macros: state.macros,
@@ -299,6 +302,7 @@
     const d = state.defaults;
     if (d.sec_minicom)  $cmdSec.value  = d.sec_minicom.commands.join("\n");
     if (d.nmc_minicom)  $cmdNmc.value  = d.nmc_minicom.commands.join("\n");
+    if (d.apu_uart)     $cmdApu.value  = d.apu_uart.commands.join("\n");
     if (d.xsdb)         $cmdXsdb.value = d.xsdb.commands.join("\n");
     if (d._jumpHost && !$jumpInput.value) $jumpInput.value = d._jumpHost;
     if (d._username && !$jumpUserInput.value) $jumpUserInput.value = d._username;
@@ -331,6 +335,7 @@
         if (entry.commands) {
           if (entry.commands.sec) $cmdSec.value = entry.commands.sec.join("\n");
           if (entry.commands.nmc) $cmdNmc.value = entry.commands.nmc.join("\n");
+          if (entry.commands.apu) $cmdApu.value = entry.commands.apu.join("\n");
           if (entry.commands.xsdb) $cmdXsdb.value = entry.commands.xsdb.join("\n");
         }
         if (entry.macros) state.macros = entry.macros;
@@ -360,7 +365,7 @@
     const jumpUser = $jumpUserInput.value.trim() || undefined;
     const targetUser = $targetUserInput.value.trim() || undefined;
     const password = $passInput.value || undefined;
-    const commands = { sec: parseCommands($cmdSec.value), nmc: parseCommands($cmdNmc.value), xsdb: parseCommands($cmdXsdb.value) };
+    const commands = { sec: parseCommands($cmdSec.value), nmc: parseCommands($cmdNmc.value), apu: parseCommands($cmdApu.value), xsdb: parseCommands($cmdXsdb.value) };
 
     state.watchPatterns = $watchPatterns.value.split(",").map(s => s.trim()).filter(Boolean);
 
@@ -545,19 +550,27 @@
       });
     }
 
-    if (hDiv && leftCol) {
+    const hDivs = leftCol ? leftCol.querySelectorAll(".pane-divider.horizontal") : [];
+    hDivs.forEach((hd, divIdx) => {
       let dragging = false;
-      hDiv.addEventListener("mousedown", (e) => {
-        e.preventDefault(); dragging = true; hDiv.classList.add("dragging");
+      hd.addEventListener("mousedown", (e) => {
+        e.preventDefault(); dragging = true; hd.classList.add("dragging");
         document.body.style.cursor = "row-resize"; document.body.style.userSelect = "none";
       });
       document.addEventListener("mousemove", (e) => {
         if (!dragging) return;
-        const rect = leftCol.getBoundingClientRect();
-        const pct = ((e.clientY - rect.top) / rect.height) * 100;
-        const clamped = Math.max(15, Math.min(85, pct));
         const panes = leftCol.querySelectorAll(".terminal-pane");
-        if (panes.length >= 2) {
+        if (panes.length < 2) return;
+        const rect = leftCol.getBoundingClientRect();
+        const totalH = rect.height;
+        const yPct = ((e.clientY - rect.top) / totalH) * 100;
+        const clamped = Math.max(10, Math.min(90, yPct));
+        if (panes.length === 3 && divIdx === 0) {
+          panes[0].style.flex = `0 0 ${clamped}%`; panes[0].style.maxHeight = `${clamped}%`;
+        } else if (panes.length === 3 && divIdx === 1) {
+          const remaining = 100 - parseFloat(panes[0].style.flex?.split(" ")[2]) || 33;
+          panes[2].style.flex = `0 0 ${100 - clamped}%`; panes[2].style.maxHeight = `${100 - clamped}%`;
+        } else if (panes.length === 2) {
           panes[0].style.flex = `0 0 ${clamped}%`; panes[0].style.maxHeight = `${clamped}%`;
           panes[1].style.flex = `0 0 ${100 - clamped}%`; panes[1].style.maxHeight = `${100 - clamped}%`;
         }
@@ -565,11 +578,11 @@
       });
       document.addEventListener("mouseup", () => {
         if (!dragging) return;
-        dragging = false; hDiv.classList.remove("dragging");
+        dragging = false; hd.classList.remove("dragging");
         document.body.style.cursor = ""; document.body.style.userSelect = "";
         fitAllTerminals();
       });
-    }
+    });
   }
 
   // -- Terminal creation -----------------------------------------------
@@ -607,6 +620,7 @@
     const { host, jumpHost, jumpUser, targetUser, password, commands } = state.connParams;
     connectTerminal("sec",  host, jumpUser, targetUser, password, jumpHost, commands.sec);
     connectTerminal("nmc",  host, jumpUser, targetUser, password, jumpHost, commands.nmc);
+    connectTerminal("apu",  host, jumpUser, targetUser, password, jumpHost, commands.apu);
     connectTerminal("xsdb", host, jumpUser, targetUser, password, jumpHost, commands.xsdb);
     updateStatusBar();
   }
@@ -738,7 +752,7 @@
       host: $hostInput.value.trim(),
       jumpUser: $jumpUserInput.value.trim(),
       targetUser: $targetUserInput.value.trim(),
-      commands: { sec: parseCommands($cmdSec.value), nmc: parseCommands($cmdNmc.value), xsdb: parseCommands($cmdXsdb.value) },
+      commands: { sec: parseCommands($cmdSec.value), nmc: parseCommands($cmdNmc.value), apu: parseCommands($cmdApu.value), xsdb: parseCommands($cmdXsdb.value) },
       macros: state.macros,
       watchPatterns: $watchPatterns.value.trim(),
       profiles: state.profiles,
@@ -765,6 +779,7 @@
         if (config.commands) {
           if (config.commands.sec) $cmdSec.value = config.commands.sec.join("\n");
           if (config.commands.nmc) $cmdNmc.value = config.commands.nmc.join("\n");
+          if (config.commands.apu) $cmdApu.value = config.commands.apu.join("\n");
           if (config.commands.xsdb) $cmdXsdb.value = config.commands.xsdb.join("\n");
         }
         if (config.macros) state.macros = config.macros;

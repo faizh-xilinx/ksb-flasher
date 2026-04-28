@@ -52,6 +52,9 @@ DEFAULT_MACROS = {
     "nmc": [
         {"label": "Ctrl+A X (Exit)", "command": "\x01x"},
     ],
+    "apu": [
+        {"label": "Ctrl+A X (Exit)", "command": "\x01x"},
+    ],
     "xsdb": [
         {"label": "Targets", "command": "targets\n"},
         {"label": "Reset System", "command": "targets -set -filter {name =~ \"*PMC*\"}; rst -system; source run.tcl\n"},
@@ -77,6 +80,13 @@ DEFAULT_TERMINALS = {
         "commands": [
             "sudo su",
             "minicom -D /dev/tty_ndr7515b_nmc -b 115200",
+        ],
+    },
+    "apu_uart": {
+        "label": "APU UART",
+        "commands": [
+            "sudo su",
+            "minicom -D /dev/tty_ndr7515b_apu -b 115200",
         ],
     },
     "xsdb": {

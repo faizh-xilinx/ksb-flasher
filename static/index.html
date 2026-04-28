@@ -124,6 +124,10 @@
             <textarea id="cmd-nmc" rows="3" spellcheck="false"></textarea>
           </div>
           <div class="cmd-group">
+            <label>APU UART</label>
+            <textarea id="cmd-apu" rows="3" spellcheck="false"></textarea>
+          </div>
+          <div class="cmd-group">
             <label>XSDB Session</label>
             <textarea id="cmd-xsdb" rows="5" spellcheck="false"></textarea>
           </div>
@@ -274,6 +278,20 @@
             </button>
           </div>
           <div class="pane-body" id="term-nmc"></div>
+        </div>
+
+        <div class="pane-divider horizontal"></div>
+
+        <div class="terminal-pane" id="pane-apu">
+          <div class="pane-header">
+            <span class="status-dot" id="status-apu"></span>
+            <span class="pane-title">APU UART</span>
+            <span class="pane-spacer"></span>
+            <button class="pane-btn" id="reconnect-apu" title="Reconnect this pane">
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 4v4h4M15 12V8h-4"/><path d="M2.5 10.5a6 6 0 0 0 10.2 1.8M13.5 5.5a6 6 0 0 0-10.2-1.8"/></svg>
+            </button>
+          </div>
+          <div class="pane-body" id="term-apu"></div>
         </div>
       </div>
 

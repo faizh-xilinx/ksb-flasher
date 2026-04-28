@@ -7,11 +7,10 @@ A web-based multi-terminal application for programming firmware images on SmartN
 ```
 +------------------+---------------------+
 |  SEC Minicom     |                     |
-|  (top-left)      |                     |
-|                  |    XSDB Session     |
++--  resizable  ---+                     |
+|  NMC Minicom     |    XSDB Session     |
 +--  resizable  ---+    (right half)     |
-|  NMC Minicom     |                     |
-|  (bottom-left)   |                     |
+|  APU UART        |                     |
 +------------------+---------------------+
 ```
 
