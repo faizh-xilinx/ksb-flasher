@@ -767,23 +767,23 @@ html, body {
   position: relative;
 }
 
-.pane-body::before {
+.pane-body::after {
   content: '';
   position: absolute;
   inset: 0;
-  z-index: 0;
+  z-index: 10;
   pointer-events: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 30'%3E%3Cpath d='M14.5 24.5h-4.2l-1.8-4.3H3.2l-1.7 4.3H0L6.6 5.5h2.6l5.3 19zm-7-7l-2.8-7.5-2.8 7.5h5.6zm18.8 7l-1-4.3h-5.6l-1 4.3h-3.2l4.8-19h4.3l4.8 19h-3.1zm-3.8-16.5l-2.2 9.5h4.3l-2.1-9.5zM39.3 24.5V5.5h5.2c6.8 0 10.4 3.8 10.4 9.5s-3.6 9.5-10.4 9.5h-5.2zm3-2.7h2c5 0 7.5-2.6 7.5-6.8s-2.5-6.8-7.5-6.8h-2v13.6z' fill='%23ffffff' opacity='0.025'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 30'%3E%3Cpath d='M14.5 24.5h-4.2l-1.8-4.3H3.2l-1.7 4.3H0L6.6 5.5h2.6l5.3 19zm-7-7l-2.8-7.5-2.8 7.5h5.6zm18.8 7l-1-4.3h-5.6l-1 4.3h-3.2l4.8-19h4.3l4.8 19h-3.1zm-3.8-16.5l-2.2 9.5h4.3l-2.1-9.5zM39.3 24.5V5.5h5.2c6.8 0 10.4 3.8 10.4 9.5s-3.6 9.5-10.4 9.5h-5.2zm3-2.7h2c5 0 7.5-2.6 7.5-6.8s-2.5-6.8-7.5-6.8h-2v13.6z' fill='%23ffffff' opacity='0.04'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: center;
-  background-size: 45%;
+  background-size: 40%;
 }
 
-html.light .pane-body::before {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 30'%3E%3Cpath d='M14.5 24.5h-4.2l-1.8-4.3H3.2l-1.7 4.3H0L6.6 5.5h2.6l5.3 19zm-7-7l-2.8-7.5-2.8 7.5h5.6zm18.8 7l-1-4.3h-5.6l-1 4.3h-3.2l4.8-19h4.3l4.8 19h-3.1zm-3.8-16.5l-2.2 9.5h4.3l-2.1-9.5zM39.3 24.5V5.5h5.2c6.8 0 10.4 3.8 10.4 9.5s-3.6 9.5-10.4 9.5h-5.2zm3-2.7h2c5 0 7.5-2.6 7.5-6.8s-2.5-6.8-7.5-6.8h-2v13.6z' fill='%23000000' opacity='0.03'/%3E%3C/svg%3E");
+html.light .pane-body::after {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 30'%3E%3Cpath d='M14.5 24.5h-4.2l-1.8-4.3H3.2l-1.7 4.3H0L6.6 5.5h2.6l5.3 19zm-7-7l-2.8-7.5-2.8 7.5h5.6zm18.8 7l-1-4.3h-5.6l-1 4.3h-3.2l4.8-19h4.3l4.8 19h-3.1zm-3.8-16.5l-2.2 9.5h4.3l-2.1-9.5zM39.3 24.5V5.5h5.2c6.8 0 10.4 3.8 10.4 9.5s-3.6 9.5-10.4 9.5h-5.2zm3-2.7h2c5 0 7.5-2.6 7.5-6.8s-2.5-6.8-7.5-6.8h-2v13.6z' fill='%23000000' opacity='0.05'/%3E%3C/svg%3E");
 }
 
-.pane-body .xterm { height: 100%; position: relative; z-index: 1; }
+.pane-body .xterm { height: 100%; }
 
 /* Status bar */
 .statusbar {
