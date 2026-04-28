@@ -9,7 +9,7 @@ A web-based multi-terminal application for programming firmware images on SmartN
 |  SEC Minicom     |                     |
 |  (top-left)      |                     |
 |                  |    XSDB Session     |
-+------------------+    (right half)     |
++--  resizable  ---+    (right half)     |
 |  NMC Minicom     |                     |
 |  (bottom-left)   |                     |
 +------------------+---------------------+
@@ -17,40 +17,64 @@ A web-based multi-terminal application for programming firmware images on SmartN
 
 ## One-Click Install (Windows)
 
-1. Download or clone this repository
-2. Double-click **`install.bat`**
-
-That's it. The script will:
-- Download a portable Python (no system install needed)
-- Install all dependencies
-- Build a standalone `KSB_Flasher.exe`
-- Create a desktop shortcut
-
-## Manual Setup
-
-```bash
-pip install -r requirements.txt
-pip install pyinstaller
-python -m PyInstaller ksb_flasher.spec --clean --noconfirm
-# Output: dist/KSB_Flasher.exe
+```
+git clone https://github.com/faizh-xilinx/ksb-flasher.git
+cd ksb-flasher
+install.bat
 ```
 
-Or run directly without building:
+The installer downloads a portable Python, installs dependencies, builds a standalone `KSB_Flasher.exe`, and creates a desktop shortcut. No admin rights needed.
 
-```bash
-pip install -r requirements.txt
-python app.py
+### Updating
+
+After pulling new changes, just run `install.bat` again. It auto-detects the existing installation and does a fast update (copies new files + rebuilds the .exe, skips Python/deps).
+
+```
+git pull
+install.bat            # quick update (~35s)
+install.bat --fresh    # full reinstall if needed
 ```
 
 ## Features
 
-- **Jump host support** — SSH through a gateway to reach lab machines on internal networks
-- **Separate user logins** — different users for jump host (e.g. `faizh`) and target (e.g. `root`)
-- **Connection history** — remembers hosts, users, and customized commands per connection
-- **Editable commands** — modify startup commands for each terminal before connecting
-- **Live terminals** — full interactive PTY sessions via xterm.js (colors, special keys, scrollback)
-- **Auto-resize** — terminals resize with the browser window
-- **Standalone .exe** — no Python or dependencies needed on the target machine
+### Connection
+- **Jump host support** -- SSH through a gateway to reach lab machines on internal networks
+- **Separate user logins** -- different users for jump host (e.g. `faizh`) and target (e.g. `root`)
+- **Connection history** -- remembers hosts, users, and customized commands per connection
+- **Connection profiles** -- save/load named profiles (e.g. "NDR730J B0 PDI") from a dropdown
+- **Export/Import config** -- share a `.json` config file with teammates
+
+### Terminals
+- **Live terminals** -- full interactive PTY via xterm.js (colors, special keys, scrollback)
+- **Resizable panes** -- drag the dividers to resize SEC/NMC/XSDB panes
+- **Terminal search** -- Ctrl+F to search scrollback, Enter/Shift+Enter for next/prev match
+- **Font zoom** -- Ctrl+/- or toolbar buttons (8-24px), Ctrl+0 to reset
+- **Dark/Light theme** -- toggle in toolbar, persists across sessions
+- **Reconnect per-pane** -- reconnect a single dropped session without affecting others
+
+### Automation
+- **Macro buttons** -- one-click command buttons grouped by pane (XSDB: Reset System, Program PDI, Load All FW, etc.)
+- **Dynamic PMC target** -- macros auto-select the PMC target via `targets -set -filter {name =~ "*PMC*"}` instead of hardcoded target numbers
+- **Broadcast input** -- BCAST toggle sends keystrokes to all three panes simultaneously
+- **Watch patterns** -- comma-separated strings (e.g. `DONE, ERROR`); triggers a desktop notification when matched
+- **Editable commands** -- modify startup commands for each terminal before connecting
+
+### Operations
+- **Session logging** -- auto-saves terminal output to timestamped log files in `logs/`
+- **File upload** -- drag-and-drop SCP upload to the target machine through the jump host
+
+## Default XSDB Macros
+
+| Button | Command |
+|---|---|
+| Targets | `targets` |
+| Reset System | `targets -set -filter {name =~ "*PMC*"}; rst -system; source run.tcl` |
+| Program PDI | `targets -set -filter {name =~ "*PMC*"}; device program design_1_wrapper.pdi` |
+| Load All FW | `ta 7; dow -f cmc_fw.elf; con; ta 4; dow -f nmc_fw.elf; con; ta 5; dow -f sec_fw.elf; con` |
+| Load CMC | `ta 7; dow -f cmc_fw.elf; con` |
+| Load NMC | `ta 4; dow -f nmc_fw.elf; con` |
+| Load SEC | `ta 5; dow -f sec_fw.elf; con` |
+| Full Flash | Reset + Program PDI + Load All FW in sequence |
 
 ## Requirements
 
