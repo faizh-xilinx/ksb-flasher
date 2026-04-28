@@ -414,9 +414,9 @@
       if (!result.ok) { showError(result.error); setConnecting(false); return; }
     } catch (err) { showError("Pre-flight failed: " + err.message); setConnecting(false); return; }
 
-    const idracHost = $idracHost.value.trim() || undefined;
+    const idracHost = $idracHost.value.trim();
     const idracUser = $idracUser.value.trim() || "root";
-    const idracPass = $idracPass.value || undefined;
+    const idracPass = $idracPass.value;
 
     state.connParams = { host, jumpHost, jumpUser, targetUser, password, commands, idracHost, idracUser, idracPass };
 
@@ -437,7 +437,7 @@
     connectAllTerminals();
     state.connected = true;
     setConnecting(false);
-    if (idracHost) pollPowerStatus();
+    if (idracHost && idracHost.length > 0) pollPowerStatus();
   }
 
   function handleDisconnect() {
@@ -920,6 +920,7 @@
       watchPatterns: $watchPatterns.value.trim(),
       idracHost: $idracHost.value.trim(),
       idracUser: $idracUser.value.trim(),
+      idracPass: $idracPass.value,
       profiles: state.profiles,
     };
     const blob = new Blob([JSON.stringify(config, null, 2)], { type: "application/json" });
@@ -951,6 +952,7 @@
         if (config.watchPatterns) $watchPatterns.value = config.watchPatterns;
         if (config.idracHost) $idracHost.value = config.idracHost;
         if (config.idracUser) $idracUser.value = config.idracUser;
+        if (config.idracPass) $idracPass.value = config.idracPass;
         if (config.profiles) {
           Object.assign(state.profiles, config.profiles);
           localStorage.setItem(PROFILES_KEY, JSON.stringify(state.profiles));
