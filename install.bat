@@ -16,54 +16,68 @@ set "PYTHON_URL=https://www.python.org/ftp/python/%PYTHON_VER%/python-%PYTHON_VE
 set "PIP_URL=https://bootstrap.pypa.io/get-pip.py"
 set "SCRIPT_DIR=%~dp0"
 
-:: ── Parse arguments ──────────────────────────────────────────────
-set "DO_UPDATE=0"
-if /i "%~1"=="--update" set "DO_UPDATE=1"
-if /i "%~1"=="-u"       set "DO_UPDATE=1"
-if /i "%~1"=="update"   set "DO_UPDATE=1"
+:: ── Detect mode ────────────────────────────────────────────────
+:: Auto-detect: if install dir + python already exist, do a quick update
+set "MODE=install"
+if exist "%INSTALL_DIR%\_python\python.exe" (
+    if exist "%INSTALL_DIR%\dist\KSB_Flasher.exe" (
+        set "MODE=update"
+    )
+)
+:: Allow explicit override
+if /i "%~1"=="--fresh" set "MODE=install"
+if /i "%~1"=="--clean" set "MODE=install"
 
-if "%DO_UPDATE%"=="1" (
-    echo  Mode: UPDATE - clean reinstall, preserving history
+if "%MODE%"=="update" (
+    echo  Mode: QUICK UPDATE  (reuses existing Python + deps)
+    echo         Use --fresh for full reinstall
     echo.
 
     :: Kill running instance
     taskkill /f /im KSB_Flasher.exe >nul 2>&1
-    timeout /t 2 /nobreak >nul 2>&1
+    timeout /t 1 /nobreak >nul 2>&1
 
-    :: Back up user data
-    if exist "%INSTALL_DIR%\connection_history.json" (
-        copy /y "%INSTALL_DIR%\connection_history.json" "%TEMP%\ksb_history_backup.json" >nul 2>&1
-        echo  Backed up connection history.
-    )
-    if exist "%INSTALL_DIR%\logs" (
-        xcopy /y /s /i "%INSTALL_DIR%\logs" "%TEMP%\ksb_logs_backup" >nul 2>&1
-        echo  Backed up session logs.
+    :: Copy new app files over existing install
+    echo [1/2] Updating application files...
+    copy /y "%SCRIPT_DIR%app.py" "%INSTALL_DIR%\app.py" >nul 2>&1
+    copy /y "%SCRIPT_DIR%requirements.txt" "%INSTALL_DIR%\requirements.txt" >nul 2>&1
+    copy /y "%SCRIPT_DIR%ksb_flasher.spec" "%INSTALL_DIR%\ksb_flasher.spec" >nul 2>&1
+    xcopy /y /s /i "%SCRIPT_DIR%static" "%INSTALL_DIR%\static" >nul 2>&1
+
+    :: Rebuild .exe
+    echo [2/2] Rebuilding KSB_Flasher.exe...
+    pushd "%INSTALL_DIR%"
+    "%INSTALL_DIR%\_python\python.exe" -m PyInstaller ksb_flasher.spec --clean --noconfirm >nul 2>&1
+    popd
+    if errorlevel 1 (
+        echo ERROR: Build failed. Try: install.bat --fresh
+        pause
+        exit /b 1
     )
 
-    :: Remove old installation
-    echo  Removing old installation...
-    rmdir /s /q "%INSTALL_DIR%" >nul 2>&1
-    echo  Old installation removed.
     echo.
+    echo  ============================================
+    echo   Update complete
+    echo.
+    echo   EXE:      %INSTALL_DIR%\dist\KSB_Flasher.exe
+    echo  ============================================
+    echo.
+    echo  Press any key to launch KSB Flasher...
+    pause >nul
+    start "" "%INSTALL_DIR%\dist\KSB_Flasher.exe"
+    exit /b 0
 )
+
+:: ══════════════════════════════════════════════════════════════
+:: FULL INSTALL (first time or --fresh)
+:: ══════════════════════════════════════════════════════════════
+
+echo  Mode: FRESH INSTALL
 
 :: ── Create install directory ───────────────────────────────────
 echo [1/7] Creating install directory...
 if not exist "%INSTALL_DIR%" mkdir "%INSTALL_DIR%"
 if not exist "%INSTALL_DIR%\_python" mkdir "%INSTALL_DIR%\_python"
-
-:: ── Restore user data if updating ──────────────────────────────
-if "%DO_UPDATE%"=="1" (
-    if exist "%TEMP%\ksb_history_backup.json" (
-        copy /y "%TEMP%\ksb_history_backup.json" "%INSTALL_DIR%\connection_history.json" >nul 2>&1
-        del "%TEMP%\ksb_history_backup.json" >nul 2>&1
-    )
-    if exist "%TEMP%\ksb_logs_backup" (
-        xcopy /y /s /i "%TEMP%\ksb_logs_backup" "%INSTALL_DIR%\logs" >nul 2>&1
-        rmdir /s /q "%TEMP%\ksb_logs_backup" >nul 2>&1
-    )
-    echo       Restored user data.
-)
 
 :: ── Download embedded Python ───────────────────────────────────
 echo [2/7] Downloading Python %PYTHON_VER% (embeddable)...
@@ -128,16 +142,13 @@ powershell -NoProfile -Command "$d=[Environment]::GetFolderPath('Desktop'); $ws=
 :: ── Done ───────────────────────────────────────────────────────
 echo.
 echo  ============================================
-if "%DO_UPDATE%"=="1" (
-    echo   Update complete
-) else (
-    echo   Installation complete
-)
+echo   Installation complete
 echo.
 echo   EXE:      %INSTALL_DIR%\dist\KSB_Flasher.exe
 echo   Shortcut: Desktop\KSB Flasher
 echo.
-echo   To update later, run: install.bat --update
+echo   Future updates: git pull, then run install.bat
+echo   Full reinstall: install.bat --fresh
 echo  ============================================
 echo.
 echo  Press any key to launch KSB Flasher...
