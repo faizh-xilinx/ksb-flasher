@@ -71,6 +71,15 @@ html, body {
   animation: meshDrift 20s ease-in-out infinite alternate;
 }
 
+.bg-mesh::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: url("/static/amd-logo.png") no-repeat center / 20%;
+  opacity: 0.07;
+  pointer-events: none;
+}
+
 @keyframes meshDrift {
   0%   { filter: hue-rotate(0deg); opacity: 1; }
   100% { filter: hue-rotate(20deg); opacity: 0.8; }
@@ -773,16 +782,14 @@ html, body {
   inset: 0;
   z-index: 10;
   pointer-events: none;
-  opacity: 0.035;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 190'%3E%3Cpath fill='%23fff' d='M195.2 0L93.5 189.9h56.3l20.9-40.5h120.4l-19.2-38.7h-81.9l37.4-72.1 79.3 151.3H363L262.3 0h-67.1zM410.5 189.9V0h64.8l52.6 114.3L580.1 0h64.1v189.9h-45V60.7l-55.2 129.2h-33.2L455.5 60.7v129.2h-45zM671.5 189.9V0h90.3c70.7 0 106.8 37.4 106.8 94.3 0 57.5-36.8 95.6-107.5 95.6h-89.6zm47.7-42.2h38.8c42.9 0 62.8-22.1 62.8-53.4 0-31.3-19.9-52.7-62.8-52.7h-38.8v106.1z'/%3E%3Cpath fill='%2300a651' d='M0 189.9h44.3V44.3H0z'/%3E%3Cpath fill='%23fff' d='M44.3 0L0 44.3h44.3V0z'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: center;
-  background-size: 30%;
+  opacity: 0.06;
+  background: url("/static/amd-logo.png") no-repeat center / contain;
+  padding: 15%;
+  background-origin: content-box;
 }
 
 html.light .pane-body::after {
-  opacity: 0.04;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 190'%3E%3Cpath fill='%23000' d='M195.2 0L93.5 189.9h56.3l20.9-40.5h120.4l-19.2-38.7h-81.9l37.4-72.1 79.3 151.3H363L262.3 0h-67.1zM410.5 189.9V0h64.8l52.6 114.3L580.1 0h64.1v189.9h-45V60.7l-55.2 129.2h-33.2L455.5 60.7v129.2h-45zM671.5 189.9V0h90.3c70.7 0 106.8 37.4 106.8 94.3 0 57.5-36.8 95.6-107.5 95.6h-89.6zm47.7-42.2h38.8c42.9 0 62.8-22.1 62.8-53.4 0-31.3-19.9-52.7-62.8-52.7h-38.8v106.1z'/%3E%3Cpath fill='%2300a651' d='M0 189.9h44.3V44.3H0z'/%3E%3Cpath fill='%23000' d='M44.3 0L0 44.3h44.3V0z'/%3E%3C/svg%3E");
+  opacity: 0.08;
 }
 
 .pane-body .xterm { height: 100%; }
