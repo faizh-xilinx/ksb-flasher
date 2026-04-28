@@ -281,6 +281,7 @@
     if (p.watchPatterns) $watchPatterns.value = p.watchPatterns;
     if (p.idracHost) $idracHost.value = p.idracHost;
     if (p.idracUser) $idracUser.value = p.idracUser;
+    if (p.idracPass) $idracPass.value = p.idracPass;
     $profileName.value = name;
   }
 
@@ -302,6 +303,7 @@
       watchPatterns: $watchPatterns.value.trim(),
       idracHost: $idracHost.value.trim(),
       idracUser: $idracUser.value.trim(),
+      idracPass: $idracPass.value,
     };
     localStorage.setItem(PROFILES_KEY, JSON.stringify(state.profiles));
     renderProfileDropdown();
@@ -371,6 +373,7 @@
         if (entry.macros) state.macros = entry.macros;
         if (entry.idracHost) $idracHost.value = entry.idracHost;
         if (entry.idracUser) $idracUser.value = entry.idracUser;
+        if (entry.idracPass) $idracPass.value = entry.idracPass;
         $hostInput.focus();
       });
 
@@ -420,7 +423,7 @@
     try {
       state.history = await (await fetch("/api/history", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ host, jumpUser, targetUser, jumpHost, commands, macros: state.macros, idracHost, idracUser }),
+        body: JSON.stringify({ host, jumpUser, targetUser, jumpHost, commands, macros: state.macros, idracHost, idracUser, idracPass }),
       })).json();
     } catch {}
 
