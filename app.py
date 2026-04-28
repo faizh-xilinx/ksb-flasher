@@ -53,9 +53,12 @@ DEFAULT_MACROS = {
         {"label": "Ctrl+A X (Exit)", "command": "\x01x"},
     ],
     "xsdb": [
-        {"label": "List Targets", "command": "targets\n"},
-        {"label": "Reset System", "command": "rst -system\n"},
-        {"label": "Device Program", "command": "device program ./design_1_wrapper.pdi\n"},
+        {"label": "Targets", "command": "targets\n"},
+        {"label": "Reset System", "command": "ta 34; rst -system; source run.tcl\n"},
+        {"label": "Load All FW", "command": "ta 7; dow -f cmc_fw.elf; con; ta 4; dow -f nmc_fw.elf; con; ta 5; dow -f sec_fw.elf; con\n"},
+        {"label": "Load CMC", "command": "ta 7; dow -f cmc_fw.elf; con\n"},
+        {"label": "Load NMC", "command": "ta 4; dow -f nmc_fw.elf; con\n"},
+        {"label": "Load SEC", "command": "ta 5; dow -f sec_fw.elf; con\n"},
     ],
 }
 
