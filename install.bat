@@ -80,18 +80,12 @@ if errorlevel 1 (
 :: ── Create desktop shortcut ────────────────────────────────────
 echo.
 echo  Creating desktop shortcut...
-powershell -NoProfile -Command ^
-  "$ws = New-Object -ComObject WScript.Shell; ^
-   $sc = $ws.CreateShortcut([IO.Path]::Combine($ws.SpecialFolders('Desktop'), 'KSB Flasher.lnk')); ^
-   $sc.TargetPath = '%INSTALL_DIR%\dist\KSB_Flasher.exe'; ^
-   $sc.WorkingDirectory = '%INSTALL_DIR%\dist'; ^
-   $sc.Description = 'SmartNIC Firmware Programming Terminal'; ^
-   $sc.Save()" >nul 2>&1
+powershell -NoProfile -Command "$ws = New-Object -ComObject WScript.Shell; $sc = $ws.CreateShortcut([IO.Path]::Combine($ws.SpecialFolders('Desktop'), 'KSB Flasher.lnk')); $sc.TargetPath = '%INSTALL_DIR%\dist\KSB_Flasher.exe'; $sc.WorkingDirectory = '%INSTALL_DIR%\dist'; $sc.Description = 'SmartNIC Firmware Programming Terminal'; $sc.Save()" >nul 2>&1
 
 :: ── Done ───────────────────────────────────────────────────────
 echo.
 echo  ============================================
-echo   Installation complete!
+echo   Installation complete!!
 echo.
 echo   EXE:      %INSTALL_DIR%\dist\KSB_Flasher.exe
 echo   Shortcut: Desktop\KSB Flasher
