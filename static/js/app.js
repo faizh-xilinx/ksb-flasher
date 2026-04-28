@@ -54,6 +54,8 @@
   const $fontUp        = $("font-up");
   const $fontDown      = $("font-down");
   const $fontSizeLabel = $("font-size-label");
+  const $apuToggle     = $("apu-toggle");
+  const $apuCheckbox   = $("apu-checkbox");
   const $broadcastToggle = $("broadcast-toggle");
   const $broadcastCheckbox = $("broadcast-checkbox");
   const $exportBtn     = $("export-config-btn");
@@ -204,6 +206,15 @@
       if ((e.ctrlKey || e.metaKey) && (e.key === "=" || e.key === "+")) { e.preventDefault(); changeFontSize(1); }
       if ((e.ctrlKey || e.metaKey) && e.key === "-") { e.preventDefault(); changeFontSize(-1); }
       if ((e.ctrlKey || e.metaKey) && e.key === "0") { e.preventDefault(); changeFontSize(0); }
+    });
+
+    // APU pane toggle
+    $apuCheckbox.addEventListener("change", () => {
+      $apuToggle.classList.toggle("active", $apuCheckbox.checked);
+      document.querySelectorAll(".apu-element").forEach(el => {
+        el.classList.toggle("hidden", !$apuCheckbox.checked);
+      });
+      fitAllTerminals();
     });
 
     // Broadcast toggle

@@ -190,6 +190,11 @@
           <span class="font-size-label" id="font-size-label">13</span>
           <button class="toolbar-btn font-btn" id="font-up" title="Increase font (Ctrl++)">A+</button>
         </div>
+        <label class="toolbar-btn toolbar-toggle" id="apu-toggle" title="Show/hide APU UART pane">
+          <input type="checkbox" id="apu-checkbox" />
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><rect x="2" y="3" width="12" height="10" rx="1"/><path d="M5 8h6M5 6h3"/></svg>
+          APU
+        </label>
         <label class="toolbar-btn toolbar-toggle" id="broadcast-toggle" title="Broadcast input to all panes">
           <input type="checkbox" id="broadcast-checkbox" />
           <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M3 8a5 5 0 0 1 10 0"/><path d="M5.5 8a2.5 2.5 0 0 1 5 0"/><circle cx="8" cy="8" r="1" fill="currentColor"/></svg>
@@ -280,9 +285,9 @@
           <div class="pane-body" id="term-nmc"></div>
         </div>
 
-        <div class="pane-divider horizontal"></div>
+        <div class="pane-divider horizontal apu-element hidden" id="apu-divider"></div>
 
-        <div class="terminal-pane" id="pane-apu">
+        <div class="terminal-pane apu-element hidden" id="pane-apu">
           <div class="pane-header">
             <span class="status-dot" id="status-apu"></span>
             <span class="pane-title">APU UART</span>
