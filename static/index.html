@@ -15,6 +15,7 @@
   <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xterm-addon-web-links@0.9.0/lib/xterm-addon-web-links.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xterm-addon-search@0.13.0/lib/xterm-addon-search.js"></script>
 
   <!-- App styles -->
   <link rel="stylesheet" href="/static/css/style.css" />
@@ -42,6 +43,31 @@
       </div>
 
       <div class="card-body">
+        <!-- Connection Profiles -->
+        <div class="form-row profile-row">
+          <div class="form-group">
+            <label for="profile-select">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M2 2h12v2H2zm0 4h12v2H2zm0 4h12v2H2z"/></svg>
+              Profile
+            </label>
+            <select id="profile-select"><option value="">-- New Connection --</option></select>
+          </div>
+          <div class="form-group profile-name-group">
+            <label for="profile-name-input">
+              Save As
+            </label>
+            <div class="profile-save-row">
+              <input type="text" id="profile-name-input" placeholder="e.g. NDR730J B0 PDI" spellcheck="false" />
+              <button class="profile-save-btn" id="profile-save-btn" title="Save profile">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12.5 8.5v5h-9v-5M5 3.5h6v3H5z"/><path d="M3.5 8.5V2.5h8l2 2v4"/></svg>
+              </button>
+              <button class="profile-del-btn" id="profile-del-btn" title="Delete profile">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="4" y1="4" x2="12" y2="12"/><line x1="12" y1="4" x2="4" y2="12"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
         <div class="form-group">
           <label for="jump-input">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M1 5a2 2 0 0 1 2-2h3.586a1 1 0 0 1 .707.293l1.414 1.414A1 1 0 0 0 9.414 5H13a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V5z"/></svg>
@@ -101,6 +127,10 @@
             <label>XSDB Session</label>
             <textarea id="cmd-xsdb" rows="5" spellcheck="false"></textarea>
           </div>
+          <div class="cmd-group">
+            <label>Watch Patterns (desktop alert on match, comma-separated)</label>
+            <input type="text" id="watch-patterns" placeholder="e.g. DONE, ERROR, Programming successful" spellcheck="false" />
+          </div>
         </div>
 
         <button class="connect-btn" id="connect-btn" type="button">
@@ -154,6 +184,22 @@
 
     <!-- Macro bar -->
     <div class="macro-bar" id="macro-bar"></div>
+
+    <!-- Search bar (Ctrl+F) -->
+    <div class="search-bar hidden" id="search-bar">
+      <span class="search-label">Find:</span>
+      <input type="text" id="search-input" placeholder="Search terminal..." spellcheck="false" autocomplete="off" />
+      <button class="search-nav-btn" id="search-prev" title="Previous">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 8 6 5 3 8"/></svg>
+      </button>
+      <button class="search-nav-btn" id="search-next" title="Next">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 4 6 7 9 4"/></svg>
+      </button>
+      <span class="search-pane-label" id="search-pane-label">ALL</span>
+      <button class="search-nav-btn" id="search-close" title="Close (Esc)">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="3" x2="9" y2="9"/><line x1="9" y1="3" x2="3" y2="9"/></svg>
+      </button>
+    </div>
 
     <!-- File upload overlay -->
     <div class="upload-overlay hidden" id="upload-overlay">
