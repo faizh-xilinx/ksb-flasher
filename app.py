@@ -19,21 +19,18 @@ import asyncssh
 
 
 def _base_dir():
-    """Resolve base directory whether running as script or frozen .exe."""
     if getattr(sys, "frozen", False):
         return Path(sys._MEIPASS)
     return Path(__file__).parent
 
 
 def _data_dir():
-    """Writable directory next to the .exe (or project root in dev)."""
     if getattr(sys, "frozen", False):
         return Path(sys.executable).parent
     return Path(__file__).parent
 
 
 def _find_client_keys():
-    """Return list of SSH private key paths found in ~/.ssh/."""
     ssh_dir = Path.home() / ".ssh"
     candidates = ["id_rsa", "id_ed25519", "id_ecdsa"]
     return [str(ssh_dir / k) for k in candidates if (ssh_dir / k).exists()]
@@ -41,11 +38,26 @@ def _find_client_keys():
 
 STATIC_DIR = _base_dir() / "static"
 HISTORY_FILE = _data_dir() / "connection_history.json"
+LOGS_DIR = _data_dir() / "logs"
 PORT = 8765
 
 DEFAULT_JUMP_HOST = "xndengvm004116"
 DEFAULT_USERNAME = os.environ.get("USER") or os.environ.get("USERNAME") or ""
 DEFAULT_TARGET_USERNAME = "root"
+
+DEFAULT_MACROS = {
+    "sec": [
+        {"label": "Ctrl+A X (Exit)", "command": "\x01x"},
+    ],
+    "nmc": [
+        {"label": "Ctrl+A X (Exit)", "command": "\x01x"},
+    ],
+    "xsdb": [
+        {"label": "List Targets", "command": "targets\n"},
+        {"label": "Reset System", "command": "rst -system\n"},
+        {"label": "Device Program", "command": "device program ./design_1_wrapper.pdi\n"},
+    ],
+}
 
 DEFAULT_TERMINALS = {
     "sec_minicom": {
@@ -115,7 +127,6 @@ def add_to_history(entry):
 # ---------------------------------------------------------------------------
 
 async def _connect_jump(jump_host, username=None, password=None):
-    """SSH into the jump host using local keys."""
     kw = {"host": jump_host, "known_hosts": None}
     client_keys = _find_client_keys()
     if client_keys:
@@ -125,6 +136,18 @@ async def _connect_jump(jump_host, username=None, password=None):
     if password:
         kw["password"] = password
     return await asyncssh.connect(**kw)
+
+
+# ---------------------------------------------------------------------------
+# Session logging
+# ---------------------------------------------------------------------------
+
+def _open_log(session_name, host):
+    LOGS_DIR.mkdir(parents=True, exist_ok=True)
+    ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+    safe_host = host.replace(".", "_").replace("/", "_")
+    path = LOGS_DIR / f"{ts}_{safe_host}_{session_name}.log"
+    return open(path, "wb")
 
 
 # ---------------------------------------------------------------------------
@@ -160,13 +183,11 @@ async def get_defaults(request):
         "_jumpHost": DEFAULT_JUMP_HOST,
         "_username": DEFAULT_USERNAME,
         "_targetUsername": DEFAULT_TARGET_USERNAME,
+        "_macros": DEFAULT_MACROS,
     })
 
 
 async def preflight_check(request):
-    """Quick SSH connect/disconnect to validate the first hop (jump host
-    or target) is reachable.  Target reachability through the jump host
-    is verified by the terminal sessions themselves."""
     data = await request.json()
     host = data.get("host", "")
     jump_user = data.get("jumpUser") or None
@@ -185,30 +206,75 @@ async def preflight_check(request):
     except asyncio.TimeoutError:
         return web.json_response(
             {"ok": False, "error": f"Connection to '{first_hop}' timed out. Check hostname and network."},
-            status=200,
         )
     except OSError as exc:
-        return web.json_response(
-            {"ok": False, "error": f"Cannot reach '{first_hop}': {exc}"},
-            status=200,
-        )
+        return web.json_response({"ok": False, "error": f"Cannot reach '{first_hop}': {exc}"})
     except asyncssh.Error as exc:
-        return web.json_response(
-            {"ok": False, "error": f"SSH error on '{first_hop}': {exc}"},
-            status=200,
-        )
+        return web.json_response({"ok": False, "error": f"SSH error on '{first_hop}': {exc}"})
     except Exception as exc:
-        return web.json_response(
-            {"ok": False, "error": str(exc)},
-            status=200,
+        return web.json_response({"ok": False, "error": str(exc)})
+    finally:
+        if conn:
+            conn.close()
+
+
+async def upload_file(request):
+    """SCP a file to the target machine through the jump host."""
+    reader = await request.multipart()
+    meta_field = await reader.next()  # JSON metadata
+    meta = json.loads(await meta_field.text())
+    file_field = await reader.next()  # file data
+    filename = file_field.filename
+    file_data = await file_field.read(decode=False)
+
+    host = meta.get("host", "")
+    jump_user = meta.get("jumpUser") or None
+    target_user = meta.get("targetUser") or None
+    password = meta.get("password") or None
+    jump_host = meta.get("jumpHost") or None
+    remote_dir = meta.get("remoteDir", "/tmp")
+
+    conn = None
+    try:
+        first_hop = jump_host or host
+        first_user = jump_user if jump_host else target_user
+        conn = await asyncio.wait_for(
+            _connect_jump(first_hop, first_user, password), timeout=20
         )
+
+        if jump_host:
+            user_flag = f"{target_user}@" if target_user else ""
+            remote_path = f"{remote_dir}/{filename}"
+
+            tmp_path = f"/tmp/_ksb_upload_{filename}"
+            async with conn.start_sftp_client() as sftp:
+                async with sftp.open(tmp_path, "wb") as f:
+                    await f.write(file_data)
+
+            result = await conn.run(
+                f"scp -o StrictHostKeyChecking=no {tmp_path} {user_flag}{host}:{remote_path}; rm -f {tmp_path}",
+                check=False,
+            )
+            if result.exit_status != 0:
+                return web.json_response(
+                    {"ok": False, "error": f"SCP failed: {result.stderr.strip()}"}
+                )
+        else:
+            remote_path = f"{remote_dir}/{filename}"
+            async with conn.start_sftp_client() as sftp:
+                async with sftp.open(remote_path, "wb") as f:
+                    await f.write(file_data)
+
+        return web.json_response({"ok": True, "path": f"{remote_dir}/{filename}"})
+    except Exception as exc:
+        return web.json_response({"ok": False, "error": str(exc)})
     finally:
         if conn:
             conn.close()
 
 
 # ---------------------------------------------------------------------------
-# WebSocket ↔ SSH bridge
+# WebSocket - SSH bridge
 # ---------------------------------------------------------------------------
 
 async def ws_terminal(request):
@@ -218,6 +284,7 @@ async def ws_terminal(request):
     conn = None
     process = None
     reader_task = None
+    log_file = None
 
     try:
         init_msg = await ws.receive()
@@ -234,10 +301,17 @@ async def ws_terminal(request):
         cols = init.get("cols", 120)
         rows = init.get("rows", 40)
         command_delay = init.get("commandDelay", 0.8)
+        session_name = init.get("sessionName", "unknown")
+        enable_logging = init.get("enableLogging", True)
+
+        if enable_logging:
+            try:
+                log_file = _open_log(session_name, host)
+            except OSError:
+                pass
 
         await ws.send_str(json.dumps({"type": "status", "status": "connecting"}))
 
-        # Connect to the first hop (jump host, or target directly)
         first_hop = jump_host or host
         first_user = jump_user if jump_host else target_user
         try:
@@ -257,7 +331,6 @@ async def ws_terminal(request):
             }))
             return ws
 
-        # Open a PTY shell. If we have a jump host, chain SSH to the target.
         shell_cmd = None
         if jump_host:
             user_flag = f"-l {target_user} " if target_user else ""
@@ -272,13 +345,14 @@ async def ws_terminal(request):
 
         await ws.send_str(json.dumps({"type": "status", "status": "connected"}))
 
-        # Forward SSH stdout → WebSocket (binary)
         async def _reader():
             try:
                 while not process.stdout.at_eof():
                     data = await process.stdout.read(65536)
                     if data and not ws.closed:
                         await ws.send_bytes(data)
+                        if log_file:
+                            log_file.write(data)
             except (asyncssh.Error, ConnectionError, OSError):
                 pass
             finally:
@@ -289,7 +363,6 @@ async def ws_terminal(request):
 
         reader_task = asyncio.create_task(_reader())
 
-        # Wait for shell (and chained SSH) to be ready, then send commands
         if commands:
             initial_delay = 2.0 if jump_host else 0.5
             await asyncio.sleep(initial_delay)
@@ -298,7 +371,6 @@ async def ws_terminal(request):
                     process.stdin.write(cmd.encode("utf-8") + b"\n")
                 await asyncio.sleep(command_delay)
 
-        # Forward WebSocket → SSH stdin
         async for msg in ws:
             if msg.type == WSMsgType.TEXT:
                 payload = json.loads(msg.data)
@@ -329,6 +401,8 @@ async def ws_terminal(request):
             process.close()
         if conn:
             conn.close()
+        if log_file:
+            log_file.close()
 
     return ws
 
@@ -338,7 +412,7 @@ async def ws_terminal(request):
 # ---------------------------------------------------------------------------
 
 def create_app():
-    app = web.Application()
+    app = web.Application(client_max_size=100 * 1024 * 1024)
 
     app.router.add_get("/", index_handler)
     app.router.add_get("/api/history", get_history)
@@ -346,6 +420,7 @@ def create_app():
     app.router.add_delete("/api/history/{idx}", delete_history_entry)
     app.router.add_get("/api/defaults", get_defaults)
     app.router.add_post("/api/preflight", preflight_check)
+    app.router.add_post("/api/upload", upload_file)
     app.router.add_get("/ws/terminal", ws_terminal)
 
     app.router.add_static("/static", STATIC_DIR)
@@ -353,7 +428,7 @@ def create_app():
 
 
 def main():
-    print(f"\n  KSB Flasher starting → http://localhost:{PORT}\n")
+    print(f"\n  KSB Flasher starting -> http://localhost:{PORT}\n")
     webbrowser.open(f"http://localhost:{PORT}")
 
     app = create_app()

@@ -27,7 +27,6 @@
     <div class="bg-mesh"></div>
 
     <div class="connect-card">
-      <!-- Header -->
       <div class="card-header">
         <div class="logo">
           <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
@@ -42,7 +41,6 @@
         </div>
       </div>
 
-      <!-- Connection form -->
       <div class="card-body">
         <div class="form-group">
           <label for="jump-input">
@@ -80,12 +78,11 @@
         <div class="form-group">
           <label for="pass-input">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M5.5 5a2.5 2.5 0 0 1 5 0v1H12a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h1.5V5zM7 5v1h2V5a1 1 0 1 0-2 0zm1 5.5a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></svg>
-            Password <span class="optional">(optional – SSH key auth by default)</span>
+            Password <span class="optional">(optional - SSH key auth by default)</span>
           </label>
           <input type="password" id="pass-input" placeholder="SSH key auth by default" autocomplete="off" />
         </div>
 
-        <!-- Command editor toggle -->
         <button class="cmd-toggle" id="cmd-toggle" type="button">
           <svg class="chevron" width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 5 7 8 10 5"/></svg>
           Customize Commands
@@ -114,12 +111,9 @@
         <div id="connect-error" class="connect-error"></div>
       </div>
 
-      <!-- History -->
       <div class="card-footer" id="history-section">
         <h3>Recent Connections</h3>
-        <ul id="history-list" class="history-list">
-          <!-- Populated by JS -->
-        </ul>
+        <ul id="history-list" class="history-list"></ul>
         <p class="history-empty" id="history-empty">No recent connections</p>
       </div>
     </div>
@@ -142,20 +136,57 @@
         <span class="toolbar-host" id="toolbar-host"></span>
       </div>
       <div class="toolbar-right">
-        <button class="toolbar-btn" id="disconnect-btn" title="Disconnect">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="4" y1="4" x2="12" y2="12"/><line x1="12" y1="4" x2="4" y2="12"/></svg>
+        <label class="toolbar-btn toolbar-toggle" id="logging-toggle" title="Session logging">
+          <input type="checkbox" id="logging-checkbox" checked />
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M14 8a6 6 0 1 1-12 0 6 6 0 0 1 12 0z"/><circle cx="8" cy="8" r="2.5" fill="currentColor" stroke="none"/></svg>
+          LOG
+        </label>
+        <button class="toolbar-btn" id="upload-btn" title="Upload file to target">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 10V3m0 0L5 6m3-3 3 3M2 11v2a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-2"/></svg>
+          Upload
+        </button>
+        <button class="toolbar-btn toolbar-btn-danger" id="disconnect-btn" title="Disconnect">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="4" y1="4" x2="12" y2="12"/><line x1="12" y1="4" x2="4" y2="12"/></svg>
           Disconnect
         </button>
       </div>
     </div>
 
-    <!-- Terminal panes: left column (SEC top + NMC bottom) | right half (XSDB) -->
+    <!-- Macro bar -->
+    <div class="macro-bar" id="macro-bar"></div>
+
+    <!-- File upload overlay -->
+    <div class="upload-overlay hidden" id="upload-overlay">
+      <div class="upload-panel">
+        <h3>Upload File to Target</h3>
+        <div class="upload-drop" id="upload-drop">
+          <svg width="32" height="32" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 20V8m0 0l-5 5m5-5 5 5M4 22v4a2 2 0 0 0 2 2h20a2 2 0 0 0 2-2v-4"/></svg>
+          <p>Drag &amp; drop files here or click to browse</p>
+          <input type="file" id="upload-file-input" multiple hidden />
+        </div>
+        <div class="form-group" style="margin-top:12px">
+          <label>Remote directory</label>
+          <input type="text" id="upload-remote-dir" value="/tmp" spellcheck="false" />
+        </div>
+        <div class="upload-status" id="upload-status"></div>
+        <div class="upload-actions">
+          <button class="toolbar-btn" id="upload-cancel">Cancel</button>
+          <button class="connect-btn" id="upload-send" style="width:auto;padding:8px 24px;margin:0">Upload</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Terminal panes -->
     <div class="terminal-layout">
       <div class="left-column">
         <div class="terminal-pane" id="pane-sec">
           <div class="pane-header">
             <span class="status-dot" id="status-sec"></span>
             <span class="pane-title">SEC Minicom</span>
+            <span class="pane-spacer"></span>
+            <button class="pane-btn" id="reconnect-sec" title="Reconnect this pane">
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 4v4h4M15 12V8h-4"/><path d="M2.5 10.5a6 6 0 0 0 10.2 1.8M13.5 5.5a6 6 0 0 0-10.2-1.8"/></svg>
+            </button>
           </div>
           <div class="pane-body" id="term-sec"></div>
         </div>
@@ -166,6 +197,10 @@
           <div class="pane-header">
             <span class="status-dot" id="status-nmc"></span>
             <span class="pane-title">NMC Minicom</span>
+            <span class="pane-spacer"></span>
+            <button class="pane-btn" id="reconnect-nmc" title="Reconnect this pane">
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 4v4h4M15 12V8h-4"/><path d="M2.5 10.5a6 6 0 0 0 10.2 1.8M13.5 5.5a6 6 0 0 0-10.2-1.8"/></svg>
+            </button>
           </div>
           <div class="pane-body" id="term-nmc"></div>
         </div>
@@ -177,6 +212,10 @@
         <div class="pane-header">
           <span class="status-dot" id="status-xsdb"></span>
           <span class="pane-title">XSDB Session</span>
+          <span class="pane-spacer"></span>
+          <button class="pane-btn" id="reconnect-xsdb" title="Reconnect this pane">
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 4v4h4M15 12V8h-4"/><path d="M2.5 10.5a6 6 0 0 0 10.2 1.8M13.5 5.5a6 6 0 0 0-10.2-1.8"/></svg>
+          </button>
         </div>
         <div class="pane-body" id="term-xsdb"></div>
       </div>
@@ -188,7 +227,6 @@
     </div>
   </div>
 
-  <!-- App script -->
   <script src="/static/js/app.js"></script>
 </body>
 </html>

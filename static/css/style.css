@@ -457,26 +457,167 @@ html, body {
   color: var(--accent);
 }
 
-.toolbar-btn {
+.toolbar-right {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 5px 12px;
+}
+
+.toolbar-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   color: var(--text-muted);
   font-family: var(--font-sans);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 500;
   cursor: pointer;
   transition: all var(--transition);
 }
 
 .toolbar-btn:hover {
+  background: var(--bg-hover);
+  border-color: rgba(255, 255, 255, 0.15);
+  color: var(--text);
+}
+
+.toolbar-btn-danger:hover {
   background: rgba(239, 68, 68, 0.1);
   border-color: rgba(239, 68, 68, 0.3);
   color: var(--error);
+}
+
+.toolbar-toggle {
+  cursor: pointer;
+  user-select: none;
+}
+.toolbar-toggle input { display: none; }
+.toolbar-toggle.active {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: var(--error);
+}
+
+/* ── Macro bar ──────────────────────────────────────────────────────── */
+
+.macro-bar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  min-height: 30px;
+}
+
+.macro-bar:empty { display: none; }
+
+.macro-group-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-right: 2px;
+  padding-left: 6px;
+}
+
+.macro-group-label:not(:first-child) {
+  margin-left: 8px;
+  border-left: 1px solid var(--border);
+}
+
+.macro-btn {
+  padding: 2px 8px;
+  background: rgba(0, 212, 255, 0.06);
+  border: 1px solid rgba(0, 212, 255, 0.15);
+  border-radius: 4px;
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition);
+  white-space: nowrap;
+}
+
+.macro-btn:hover {
+  background: rgba(0, 212, 255, 0.15);
+  border-color: rgba(0, 212, 255, 0.35);
+}
+
+/* ── Upload overlay ─────────────────────────────────────────────────── */
+
+.upload-overlay {
+  position: absolute;
+  inset: 42px 0 24px 0;
+  z-index: 10;
+  background: rgba(6, 9, 15, 0.85);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.upload-panel {
+  width: 440px;
+  max-width: 90vw;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+}
+
+.upload-panel h3 {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 16px;
+}
+
+.upload-drop {
+  border: 2px dashed rgba(255,255,255,0.1);
+  border-radius: var(--radius);
+  padding: 28px;
+  text-align: center;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.upload-drop:hover, .upload-drop.dragover {
+  border-color: var(--accent);
+  background: rgba(0, 212, 255, 0.04);
+  color: var(--accent);
+}
+
+.upload-drop svg { margin-bottom: 8px; }
+.upload-drop p { font-size: 12px; }
+
+.upload-status {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 8px;
+  min-height: 18px;
+}
+
+.upload-status.error { color: var(--error); }
+.upload-status.success { color: var(--success); }
+
+.upload-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
 }
 
 /* Terminal layout – left column (SEC top / NMC bottom) | right half (XSDB) */
@@ -539,6 +680,31 @@ html, body {
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
+}
+
+.pane-spacer { flex: 1; }
+
+.pane-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  color: var(--text-dim);
+  cursor: pointer;
+  opacity: 0;
+  transition: all var(--transition);
+}
+
+.terminal-pane:hover .pane-btn { opacity: 0.6; }
+.pane-btn:hover {
+  opacity: 1 !important;
+  background: rgba(0, 212, 255, 0.1);
+  border-color: rgba(0, 212, 255, 0.25);
+  color: var(--accent);
 }
 
 /* Status dot */

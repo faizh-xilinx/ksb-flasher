@@ -1,11 +1,11 @@
 /* ====================================================================
-   KSB Flasher – Frontend Application
+   KSB Flasher - Frontend Application
    ==================================================================== */
 
 (() => {
   "use strict";
 
-  // ── DOM refs ─────────────────────────────────────────────────────
+  // -- DOM refs --------------------------------------------------------
 
   const $connectScreen = document.getElementById("connect-screen");
   const $termScreen    = document.getElementById("terminal-screen");
@@ -26,44 +26,48 @@
   const $toolbarHost   = document.getElementById("toolbar-host");
   const $disconnectBtn = document.getElementById("disconnect-btn");
   const $statusBar     = document.getElementById("statusbar-text");
+  const $macroBar      = document.getElementById("macro-bar");
+  const $loggingToggle = document.getElementById("logging-toggle");
+  const $loggingCheckbox = document.getElementById("logging-checkbox");
+  const $uploadBtn     = document.getElementById("upload-btn");
+  const $uploadOverlay = document.getElementById("upload-overlay");
+  const $uploadDrop    = document.getElementById("upload-drop");
+  const $uploadFileInput = document.getElementById("upload-file-input");
+  const $uploadRemoteDir = document.getElementById("upload-remote-dir");
+  const $uploadStatus  = document.getElementById("upload-status");
+  const $uploadCancel  = document.getElementById("upload-cancel");
+  const $uploadSend    = document.getElementById("upload-send");
 
-  // ── State ────────────────────────────────────────────────────────
+  // -- State -----------------------------------------------------------
 
   const TERMINAL_DEFS = ["sec", "nmc", "xsdb"];
+  const TERMINAL_LABELS = { sec: "SEC", nmc: "NMC", xsdb: "XSDB" };
 
   const state = {
     connected: false,
-    terminals: {},   // { sec: { term, fitAddon, ws }, ... }
+    terminals: {},
     defaults: null,
     history: [],
+    connParams: null,
+    macros: {},
+    uploadFiles: [],
   };
 
-  // xterm.js theme matching our dark UI
   const XTERM_THEME = {
     background:  "#0a0e14",
     foreground:  "#c5cdd9",
     cursor:      "#00d4ff",
     cursorAccent:"#0a0e14",
     selectionBackground: "rgba(0, 212, 255, 0.18)",
-    black:       "#1d2433",
-    red:         "#ef4444",
-    green:       "#10b981",
-    yellow:      "#f59e0b",
-    blue:        "#3b82f6",
-    magenta:     "#a855f7",
-    cyan:        "#00d4ff",
-    white:       "#c5cdd9",
-    brightBlack: "#475569",
-    brightRed:   "#f87171",
-    brightGreen: "#34d399",
-    brightYellow:"#fbbf24",
-    brightBlue:  "#60a5fa",
-    brightMagenta:"#c084fc",
-    brightCyan:  "#67e8f9",
-    brightWhite: "#f1f5f9",
+    black:   "#1d2433", red:     "#ef4444", green:   "#10b981",
+    yellow:  "#f59e0b", blue:    "#3b82f6", magenta: "#a855f7",
+    cyan:    "#00d4ff", white:   "#c5cdd9",
+    brightBlack: "#475569", brightRed:   "#f87171", brightGreen: "#34d399",
+    brightYellow:"#fbbf24", brightBlue:  "#60a5fa", brightMagenta:"#c084fc",
+    brightCyan:  "#67e8f9", brightWhite: "#f1f5f9",
   };
 
-  // ── Init ─────────────────────────────────────────────────────────
+  // -- Init ------------------------------------------------------------
 
   async function init() {
     await loadDefaults();
@@ -72,15 +76,48 @@
     $cmdToggle.addEventListener("click", toggleCmdEditor);
     $connectBtn.addEventListener("click", handleConnect);
     $disconnectBtn.addEventListener("click", handleDisconnect);
-
-    $hostInput.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") handleConnect();
-    });
-
+    $hostInput.addEventListener("keydown", (e) => { if (e.key === "Enter") handleConnect(); });
     window.addEventListener("resize", fitAllTerminals);
+
+    // Logging toggle
+    $loggingCheckbox.addEventListener("change", () => {
+      $loggingToggle.classList.toggle("active", $loggingCheckbox.checked);
+    });
+    $loggingToggle.classList.toggle("active", $loggingCheckbox.checked);
+
+    // Reconnect buttons
+    for (const name of TERMINAL_DEFS) {
+      const btn = document.getElementById(`reconnect-${name}`);
+      if (btn) btn.addEventListener("click", () => reconnectPane(name));
+    }
+
+    // Upload UI
+    $uploadBtn.addEventListener("click", () => {
+      $uploadOverlay.classList.remove("hidden");
+      $uploadStatus.textContent = "";
+      $uploadStatus.className = "upload-status";
+      state.uploadFiles = [];
+    });
+    $uploadCancel.addEventListener("click", () => $uploadOverlay.classList.add("hidden"));
+    $uploadDrop.addEventListener("click", () => $uploadFileInput.click());
+    $uploadFileInput.addEventListener("change", (e) => {
+      state.uploadFiles = Array.from(e.target.files);
+      $uploadStatus.textContent = state.uploadFiles.map(f => f.name).join(", ");
+      $uploadStatus.className = "upload-status";
+    });
+    $uploadDrop.addEventListener("dragover", (e) => { e.preventDefault(); $uploadDrop.classList.add("dragover"); });
+    $uploadDrop.addEventListener("dragleave", () => $uploadDrop.classList.remove("dragover"));
+    $uploadDrop.addEventListener("drop", (e) => {
+      e.preventDefault();
+      $uploadDrop.classList.remove("dragover");
+      state.uploadFiles = Array.from(e.dataTransfer.files);
+      $uploadStatus.textContent = state.uploadFiles.map(f => f.name).join(", ");
+      $uploadStatus.className = "upload-status";
+    });
+    $uploadSend.addEventListener("click", handleUpload);
   }
 
-  // ── Defaults & History ───────────────────────────────────────────
+  // -- Defaults & History ----------------------------------------------
 
   async function loadDefaults() {
     try {
@@ -89,6 +126,7 @@
     } catch {
       state.defaults = {};
     }
+    if (state.defaults._macros) state.macros = state.defaults._macros;
     populateCommandEditor();
   }
 
@@ -114,16 +152,13 @@
 
   function renderHistory() {
     $historyList.innerHTML = "";
-    if (state.history.length === 0) {
-      $historyEmpty.classList.add("visible");
-      return;
-    }
+    if (state.history.length === 0) { $historyEmpty.classList.add("visible"); return; }
     $historyEmpty.classList.remove("visible");
 
     state.history.forEach((entry, idx) => {
       const li = document.createElement("li");
       const jumpLabel = entry.jumpHost
-        ? `${entry.jumpUser ? esc(entry.jumpUser) + "@" : ""}${esc(entry.jumpHost)} → `
+        ? `${entry.jumpUser ? esc(entry.jumpUser) + "@" : ""}${esc(entry.jumpHost)} \u2192 `
         : "";
       const targetLabel = `${entry.targetUser ? esc(entry.targetUser) + "@" : ""}${esc(entry.host)}`;
       li.innerHTML = `
@@ -149,11 +184,11 @@
           if (entry.commands.nmc)  $cmdNmc.value  = entry.commands.nmc.join("\n");
           if (entry.commands.xsdb) $cmdXsdb.value = entry.commands.xsdb.join("\n");
         }
+        if (entry.macros) state.macros = entry.macros;
         $hostInput.focus();
       });
 
-      const delBtn = li.querySelector(".history-delete");
-      delBtn.addEventListener("click", async (e) => {
+      li.querySelector(".history-delete").addEventListener("click", async (e) => {
         e.stopPropagation();
         try {
           const resp = await fetch(`/api/history/${idx}`, { method: "DELETE" });
@@ -166,21 +201,18 @@
     });
   }
 
-  // ── Command editor toggle ────────────────────────────────────────
+  // -- Command editor toggle -------------------------------------------
 
   function toggleCmdEditor() {
     const isOpen = $cmdEditor.classList.toggle("open");
     $cmdToggle.classList.toggle("open", isOpen);
   }
 
-  // ── Connect / Disconnect ─────────────────────────────────────────
+  // -- Connect / Disconnect --------------------------------------------
 
   async function handleConnect() {
     const host = $hostInput.value.trim();
-    if (!host) {
-      $hostInput.focus();
-      return;
-    }
+    if (!host) { $hostInput.focus(); return; }
 
     const jumpHost = $jumpInput.value.trim() || undefined;
     const jumpUser = $jumpUserInput.value.trim() || undefined;
@@ -195,7 +227,6 @@
     hideError();
     setConnecting(true);
 
-    // Pre-flight: verify SSH reachability before opening terminals
     try {
       const check = await fetch("/api/preflight", {
         method: "POST",
@@ -203,36 +234,32 @@
         body: JSON.stringify({ host, jumpUser, targetUser, password, jumpHost }),
       });
       const result = await check.json();
-      if (!result.ok) {
-        showError(result.error);
-        setConnecting(false);
-        return;
-      }
+      if (!result.ok) { showError(result.error); setConnecting(false); return; }
     } catch (err) {
       showError("Pre-flight check failed: " + err.message);
       setConnecting(false);
       return;
     }
 
-    // Save to history (only after successful preflight)
+    state.connParams = { host, jumpHost, jumpUser, targetUser, password, commands };
+
     try {
       const resp = await fetch("/api/history", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ host, jumpUser, targetUser, jumpHost, commands }),
+        body: JSON.stringify({ host, jumpUser, targetUser, jumpHost, commands, macros: state.macros }),
       });
       state.history = await resp.json();
     } catch { /* non-critical */ }
 
-    // Switch to terminal screen
     $connectScreen.classList.remove("active");
     $termScreen.classList.add("active");
     const via = jumpHost ? ` via ${jumpUser ? jumpUser + "@" : ""}${jumpHost}` : "";
     $toolbarHost.textContent = `${targetUser ? targetUser + "@" : ""}${host}${via}`;
 
-    // Create terminals and connect
+    buildMacroBar();
     await createAllTerminals();
-    connectAllTerminals(host, jumpUser, targetUser, password, jumpHost, commands);
+    connectAllTerminals();
 
     state.connected = true;
     setConnecting(false);
@@ -248,47 +275,130 @@
     }
     state.terminals = {};
     state.connected = false;
+    state.connParams = null;
+    $uploadOverlay.classList.add("hidden");
 
     $termScreen.classList.remove("active");
     $connectScreen.classList.add("active");
     $statusBar.textContent = "Disconnected";
+    $macroBar.innerHTML = "";
     loadHistory();
   }
 
-  // ── Terminal creation ────────────────────────────────────────────
+  // -- Macro bar -------------------------------------------------------
+
+  function buildMacroBar() {
+    $macroBar.innerHTML = "";
+    for (const name of TERMINAL_DEFS) {
+      const macros = state.macros[name];
+      if (!macros || macros.length === 0) continue;
+
+      const label = document.createElement("span");
+      label.className = "macro-group-label";
+      label.textContent = TERMINAL_LABELS[name];
+      $macroBar.appendChild(label);
+
+      for (const m of macros) {
+        const btn = document.createElement("button");
+        btn.className = "macro-btn";
+        btn.textContent = m.label;
+        btn.title = `Send to ${TERMINAL_LABELS[name]}`;
+        btn.addEventListener("click", () => sendMacro(name, m.command));
+        $macroBar.appendChild(btn);
+      }
+    }
+  }
+
+  function sendMacro(name, command) {
+    const t = state.terminals[name];
+    if (t && t.ws && t.ws.readyState === WebSocket.OPEN) {
+      t.ws.send(JSON.stringify({ type: "input", data: command }));
+    }
+  }
+
+  // -- Reconnect individual pane ---------------------------------------
+
+  function reconnectPane(name) {
+    if (!state.connParams) return;
+    const t = state.terminals[name];
+    if (!t) return;
+
+    if (t.ws && t.ws.readyState <= WebSocket.OPEN) t.ws.close();
+    t.term.clear();
+    t.term.writeln("\x1b[33m[Reconnecting...]\x1b[0m");
+
+    const { host, jumpHost, jumpUser, targetUser, password, commands } = state.connParams;
+    const cmdMap = { sec: commands.sec, nmc: commands.nmc, xsdb: commands.xsdb };
+    connectTerminal(name, host, jumpUser, targetUser, password, jumpHost, cmdMap[name]);
+  }
+
+  // -- File upload -----------------------------------------------------
+
+  async function handleUpload() {
+    if (state.uploadFiles.length === 0) {
+      $uploadStatus.textContent = "No files selected";
+      $uploadStatus.className = "upload-status error";
+      return;
+    }
+    if (!state.connParams) return;
+
+    const { host, jumpHost, jumpUser, targetUser, password } = state.connParams;
+    const remoteDir = $uploadRemoteDir.value.trim() || "/tmp";
+
+    for (const file of state.uploadFiles) {
+      $uploadStatus.textContent = `Uploading ${file.name}...`;
+      $uploadStatus.className = "upload-status";
+
+      const form = new FormData();
+      form.append("meta", JSON.stringify({ host, jumpHost, jumpUser, targetUser, password, remoteDir }));
+      form.append("file", file);
+
+      try {
+        const resp = await fetch("/api/upload", { method: "POST", body: form });
+        const result = await resp.json();
+        if (!result.ok) {
+          $uploadStatus.textContent = `Failed: ${result.error}`;
+          $uploadStatus.className = "upload-status error";
+          return;
+        }
+        $uploadStatus.textContent = `Uploaded to ${result.path}`;
+        $uploadStatus.className = "upload-status success";
+      } catch (err) {
+        $uploadStatus.textContent = `Error: ${err.message}`;
+        $uploadStatus.className = "upload-status error";
+        return;
+      }
+    }
+  }
+
+  // -- Terminal creation -----------------------------------------------
 
   async function createAllTerminals() {
     for (const name of TERMINAL_DEFS) {
+      if (state.terminals[name] && state.terminals[name].term) continue;
       const container = document.getElementById(`term-${name}`);
       container.innerHTML = "";
 
       const term = new Terminal({
         theme: XTERM_THEME,
         fontFamily: '"JetBrains Mono", "Cascadia Code", "Fira Code", monospace',
-        fontSize: 13,
-        lineHeight: 1.35,
-        cursorBlink: true,
-        cursorStyle: "bar",
-        scrollback: 10000,
-        allowProposedApi: true,
+        fontSize: 13, lineHeight: 1.35,
+        cursorBlink: true, cursorStyle: "bar",
+        scrollback: 10000, allowProposedApi: true,
       });
 
       const fitAddon = new FitAddon.FitAddon();
       term.loadAddon(fitAddon);
-
-      try {
-        const webLinksAddon = new WebLinksAddon.WebLinksAddon();
-        term.loadAddon(webLinksAddon);
-      } catch { /* optional */ }
+      try { term.loadAddon(new WebLinksAddon.WebLinksAddon()); } catch {}
 
       term.open(container);
       fitAddon.fit();
-
       state.terminals[name] = { term, fitAddon, ws: null };
     }
   }
 
-  function connectAllTerminals(host, jumpUser, targetUser, password, jumpHost, commands) {
+  function connectAllTerminals() {
+    const { host, jumpHost, jumpUser, targetUser, password, commands } = state.connParams;
     connectTerminal("sec",  host, jumpUser, targetUser, password, jumpHost, commands.sec);
     connectTerminal("nmc",  host, jumpUser, targetUser, password, jumpHost, commands.nmc);
     connectTerminal("xsdb", host, jumpUser, targetUser, password, jumpHost, commands.xsdb);
@@ -315,8 +425,10 @@
 
     ws.onopen = () => {
       ws.send(JSON.stringify({
-        type: "init",
-        host, jumpUser, targetUser, password, jumpHost, commands, cols, rows,
+        type: "init", host, jumpUser, targetUser, password, jumpHost,
+        commands, cols, rows,
+        sessionName: name,
+        enableLogging: $loggingCheckbox.checked,
       }));
     };
 
@@ -331,7 +443,7 @@
             }
             updateStatusBar();
           }
-        } catch { /* not JSON – treat as text */ }
+        } catch {}
       } else {
         term.write(new Uint8Array(event.data));
       }
@@ -348,14 +460,12 @@
       updateStatusBar();
     };
 
-    // Forward keyboard input to SSH via WebSocket
     term.onData((data) => {
       if (ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({ type: "input", data }));
       }
     });
 
-    // Handle terminal resize
     term.onResize(({ cols, rows }) => {
       if (ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({ type: "resize", cols, rows }));
@@ -363,94 +473,67 @@
     });
   }
 
-  // ── Fit terminals on window resize ───────────────────────────────
+  // -- Fit terminals on resize -----------------------------------------
 
   let fitDebounce = null;
-
   function fitAllTerminals() {
     clearTimeout(fitDebounce);
     fitDebounce = setTimeout(() => {
       for (const name of TERMINAL_DEFS) {
         const t = state.terminals[name];
-        if (t && t.fitAddon) {
-          try { t.fitAddon.fit(); } catch { /* ignore */ }
-        }
+        if (t && t.fitAddon) { try { t.fitAddon.fit(); } catch {} }
       }
     }, 100);
   }
 
-  // ── Status bar ───────────────────────────────────────────────────
+  // -- Status bar ------------------------------------------------------
 
   function updateStatusBar() {
     const statuses = TERMINAL_DEFS.map((name) => {
       const dot = document.getElementById(`status-${name}`);
       return dot ? dot.className.split(" ").pop() : "unknown";
     });
-
-    const allConnected = statuses.every((s) => s === "connected");
-    const anyError     = statuses.some((s) => s === "error");
+    const allConnected  = statuses.every((s) => s === "connected");
+    const anyError      = statuses.some((s) => s === "error");
     const anyConnecting = statuses.some((s) => s === "connecting");
 
-    if (allConnected) {
-      $statusBar.textContent = "All sessions connected";
-    } else if (anyError) {
-      const errCount = statuses.filter((s) => s === "error").length;
-      $statusBar.textContent = `${errCount} session(s) disconnected`;
-    } else if (anyConnecting) {
-      $statusBar.textContent = "Connecting…";
-    } else {
-      $statusBar.textContent = "Disconnected";
-    }
+    if (allConnected)       $statusBar.textContent = "All sessions connected";
+    else if (anyError)      $statusBar.textContent = `${statuses.filter(s => s === "error").length} session(s) disconnected`;
+    else if (anyConnecting) $statusBar.textContent = "Connecting\u2026";
+    else                    $statusBar.textContent = "Disconnected";
   }
 
-  // ── Helpers ──────────────────────────────────────────────────────
+  // -- Helpers ---------------------------------------------------------
 
   function parseCommands(text) {
-    return text
-      .split("\n")
-      .map((l) => l.trimEnd())
-      .filter((l) => l.length > 0);
+    return text.split("\n").map(l => l.trimEnd()).filter(l => l.length > 0);
   }
 
   function setConnecting(busy) {
     $connectBtn.disabled = busy;
     $connectBtn.classList.toggle("connecting", busy);
     $connectBtn.innerHTML = busy
-      ? "Connecting…"
-      : `<svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6,3 16,9 6,15"/></svg> Connect`;
+      ? "Connecting\u2026"
+      : '<svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6,3 16,9 6,15"/></svg> Connect';
   }
 
-  function showError(msg) {
-    $connectError.textContent = msg;
-    $connectError.classList.add("visible");
+  function showError(msg) { $connectError.textContent = msg; $connectError.classList.add("visible"); }
+  function hideError()    { $connectError.classList.remove("visible"); $connectError.textContent = ""; }
+
+  function esc(str) { const d = document.createElement("div"); d.textContent = str; return d.innerHTML; }
+
+  function relativeTime(iso) {
+    if (!iso) return "";
+    const diff = Date.now() - new Date(iso).getTime();
+    const m = Math.floor(diff / 60000), h = Math.floor(diff / 3600000), d = Math.floor(diff / 86400000);
+    if (m < 1) return "just now";
+    if (m < 60) return `${m}m ago`;
+    if (h < 24) return `${h}h ago`;
+    if (d < 30) return `${d}d ago`;
+    return new Date(iso).toLocaleDateString();
   }
 
-  function hideError() {
-    $connectError.classList.remove("visible");
-    $connectError.textContent = "";
-  }
-
-  function esc(str) {
-    const d = document.createElement("div");
-    d.textContent = str;
-    return d.innerHTML;
-  }
-
-  function relativeTime(isoString) {
-    if (!isoString) return "";
-    const diff = Date.now() - new Date(isoString).getTime();
-    const mins  = Math.floor(diff / 60000);
-    const hours = Math.floor(diff / 3600000);
-    const days  = Math.floor(diff / 86400000);
-
-    if (mins < 1) return "just now";
-    if (mins < 60) return `${mins}m ago`;
-    if (hours < 24) return `${hours}h ago`;
-    if (days < 30) return `${days}d ago`;
-    return new Date(isoString).toLocaleDateString();
-  }
-
-  // ── Boot ─────────────────────────────────────────────────────────
+  // -- Boot ------------------------------------------------------------
 
   document.addEventListener("DOMContentLoaded", init);
 })();
