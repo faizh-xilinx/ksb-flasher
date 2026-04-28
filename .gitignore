@@ -1,0 +1,6 @@
+_python/
+build/
+dist/
+__pycache__/
+*.pyc
+connection_history.json

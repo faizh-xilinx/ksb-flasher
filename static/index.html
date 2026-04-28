@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>KSB Flasher</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+  <!-- xterm.js (UMD builds for script-tag loading) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css" />
+  <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xterm-addon-web-links@0.9.0/lib/xterm-addon-web-links.js"></script>
+
+  <!-- App styles -->
+  <link rel="stylesheet" href="/static/css/style.css" />
+</head>
+<body>
+  <!-- ================================================================== -->
+  <!-- CONNECTION SCREEN                                                   -->
+  <!-- ================================================================== -->
+  <div id="connect-screen" class="screen active">
+    <div class="bg-mesh"></div>
+
+    <div class="connect-card">
+      <!-- Header -->
+      <div class="card-header">
+        <div class="logo">
+          <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+            <rect width="36" height="36" rx="8" fill="url(#logo-grad)" />
+            <path d="M10 18h5l3-6 4 12 3-6h5" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            <defs><linearGradient id="logo-grad" x1="0" y1="0" x2="36" y2="36"><stop stop-color="#00d4ff"/><stop offset="1" stop-color="#7c3aed"/></linearGradient></defs>
+          </svg>
+          <div>
+            <h1>KSB Flasher</h1>
+            <span class="subtitle">SmartNIC Firmware Terminal</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Connection form -->
+      <div class="card-body">
+        <div class="form-group">
+          <label for="jump-input">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M1 5a2 2 0 0 1 2-2h3.586a1 1 0 0 1 .707.293l1.414 1.414A1 1 0 0 0 9.414 5H13a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V5z"/></svg>
+            Jump Host
+          </label>
+          <input type="text" id="jump-input" placeholder="e.g. xndengvm004116" autocomplete="off" spellcheck="false" />
+        </div>
+
+        <div class="form-group">
+          <label for="host-input">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M2 3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3zm1 0v4h10V3H3zm-1 7a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-3zm1 0v3h10v-3H3zm2 1.5a.5.5 0 1 1 1 0 .5.5 0 0 1-1 0zm0-7a.5.5 0 1 1 1 0 .5.5 0 0 1-1 0z"/></svg>
+            Target Host
+          </label>
+          <input type="text" id="host-input" placeholder="e.g. ndr730j.xndlab.xilinx.com" autocomplete="off" spellcheck="false" />
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="jump-user-input">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm0 1c-3.315 0-6 1.79-6 4v1h12v-1c0-2.21-2.685-4-6-4z"/></svg>
+              Jump User
+            </label>
+            <input type="text" id="jump-user-input" placeholder="e.g. faizh" autocomplete="off" spellcheck="false" />
+          </div>
+          <div class="form-group">
+            <label for="target-user-input">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm0 1c-3.315 0-6 1.79-6 4v1h12v-1c0-2.21-2.685-4-6-4z"/></svg>
+              Target User
+            </label>
+            <input type="text" id="target-user-input" placeholder="e.g. root" autocomplete="off" spellcheck="false" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="pass-input">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M5.5 5a2.5 2.5 0 0 1 5 0v1H12a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h1.5V5zM7 5v1h2V5a1 1 0 1 0-2 0zm1 5.5a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></svg>
+            Password <span class="optional">(optional – SSH key auth by default)</span>
+          </label>
+          <input type="password" id="pass-input" placeholder="SSH key auth by default" autocomplete="off" />
+        </div>
+
+        <!-- Command editor toggle -->
+        <button class="cmd-toggle" id="cmd-toggle" type="button">
+          <svg class="chevron" width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 5 7 8 10 5"/></svg>
+          Customize Commands
+        </button>
+
+        <div class="cmd-editor" id="cmd-editor">
+          <div class="cmd-group">
+            <label>SEC Minicom</label>
+            <textarea id="cmd-sec" rows="3" spellcheck="false"></textarea>
+          </div>
+          <div class="cmd-group">
+            <label>NMC Minicom</label>
+            <textarea id="cmd-nmc" rows="3" spellcheck="false"></textarea>
+          </div>
+          <div class="cmd-group">
+            <label>XSDB Session</label>
+            <textarea id="cmd-xsdb" rows="5" spellcheck="false"></textarea>
+          </div>
+        </div>
+
+        <button class="connect-btn" id="connect-btn" type="button">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6,3 16,9 6,15"/></svg>
+          Connect
+        </button>
+
+        <div id="connect-error" class="connect-error"></div>
+      </div>
+
+      <!-- History -->
+      <div class="card-footer" id="history-section">
+        <h3>Recent Connections</h3>
+        <ul id="history-list" class="history-list">
+          <!-- Populated by JS -->
+        </ul>
+        <p class="history-empty" id="history-empty">No recent connections</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================================================================== -->
+  <!-- TERMINAL SCREEN                                                     -->
+  <!-- ================================================================== -->
+  <div id="terminal-screen" class="screen">
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <svg width="22" height="22" viewBox="0 0 36 36" fill="none">
+          <rect width="36" height="36" rx="8" fill="url(#logo-grad2)" />
+          <path d="M10 18h5l3-6 4 12 3-6h5" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+          <defs><linearGradient id="logo-grad2" x1="0" y1="0" x2="36" y2="36"><stop stop-color="#00d4ff"/><stop offset="1" stop-color="#7c3aed"/></linearGradient></defs>
+        </svg>
+        <span class="toolbar-title">KSB Flasher</span>
+        <span class="toolbar-separator">|</span>
+        <span class="toolbar-host" id="toolbar-host"></span>
+      </div>
+      <div class="toolbar-right">
+        <button class="toolbar-btn" id="disconnect-btn" title="Disconnect">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="4" y1="4" x2="12" y2="12"/><line x1="12" y1="4" x2="4" y2="12"/></svg>
+          Disconnect
+        </button>
+      </div>
+    </div>
+
+    <!-- Terminal panes: left column (SEC top + NMC bottom) | right half (XSDB) -->
+    <div class="terminal-layout">
+      <div class="left-column">
+        <div class="terminal-pane" id="pane-sec">
+          <div class="pane-header">
+            <span class="status-dot" id="status-sec"></span>
+            <span class="pane-title">SEC Minicom</span>
+          </div>
+          <div class="pane-body" id="term-sec"></div>
+        </div>
+
+        <div class="pane-divider horizontal"></div>
+
+        <div class="terminal-pane" id="pane-nmc">
+          <div class="pane-header">
+            <span class="status-dot" id="status-nmc"></span>
+            <span class="pane-title">NMC Minicom</span>
+          </div>
+          <div class="pane-body" id="term-nmc"></div>
+        </div>
+      </div>
+
+      <div class="pane-divider vertical"></div>
+
+      <div class="terminal-pane pane-half" id="pane-xsdb">
+        <div class="pane-header">
+          <span class="status-dot" id="status-xsdb"></span>
+          <span class="pane-title">XSDB Session</span>
+        </div>
+        <div class="pane-body" id="term-xsdb"></div>
+      </div>
+    </div>
+
+    <!-- Status bar -->
+    <div class="statusbar">
+      <span id="statusbar-text">Disconnected</span>
+    </div>
+  </div>
+
+  <!-- App script -->
+  <script src="/static/js/app.js"></script>
+</body>
+</html>
