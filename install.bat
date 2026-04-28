@@ -68,7 +68,9 @@ xcopy /y /s /i "%SCRIPT_DIR%static" "%INSTALL_DIR%\static" >nul 2>&1
 
 :: ── Build .exe ─────────────────────────────────────────────────
 echo [6/6] Building KSB_Flasher.exe (this takes ~30 seconds)...
-"%INSTALL_DIR%\_python\python.exe" -m PyInstaller "%INSTALL_DIR%\ksb_flasher.spec" --clean --noconfirm --distpath "%INSTALL_DIR%\dist" --workpath "%INSTALL_DIR%\build" --specpath "%INSTALL_DIR%" >nul 2>&1
+pushd "%INSTALL_DIR%"
+"%INSTALL_DIR%\_python\python.exe" -m PyInstaller ksb_flasher.spec --clean --noconfirm >nul 2>&1
+popd
 if errorlevel 1 (
     echo ERROR: Build failed. Try running this script again.
     pause
