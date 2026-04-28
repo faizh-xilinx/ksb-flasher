@@ -60,6 +60,7 @@ DEFAULT_MACROS = {
     ],
     "xsdb": [
         {"label": "Targets", "command": "targets\n"},
+        {"label": "Auto-Detect", "command": "puts \"KSB_DETECT_START\"; foreach t [targets -target-properties] { puts \"KSB_T:[dict get $t target_id]:[dict get $t name]\" }; puts \"KSB_DETECT_END\"\n"},
         {"label": "Reset System", "command": "targets -set -filter {name =~ \"*PMC*\"}; rst -system; source run.tcl\n"},
         {"label": "Program PDI", "command": "targets -set -filter {name =~ \"*PMC*\"}; source run.tcl\n"},
         {"label": "Load All FW", "command": "ta 7; dow -f cmc_fw.elf; con; ta 4; dow -f nmc_fw.elf; con; ta 5; dow -f sec_fw.elf; con\n"},
@@ -166,6 +167,58 @@ def _open_log(session_name, host):
     safe_host = host.replace(".", "_").replace("/", "_")
     path = LOGS_DIR / f"{ts}_{safe_host}_{session_name}.log"
     return open(path, "wb")
+
+
+# ---------------------------------------------------------------------------
+# Log viewer
+# ---------------------------------------------------------------------------
+
+async def list_logs(request):
+    if not LOGS_DIR.exists():
+        return web.json_response([])
+    logs = []
+    for f in sorted(LOGS_DIR.glob("*.log"), reverse=True)[:50]:
+        logs.append({"name": f.name, "size": f.stat().st_size, "modified": f.stat().st_mtime})
+    return web.json_response(logs)
+
+
+async def read_log(request):
+    name = request.match_info["name"]
+    path = LOGS_DIR / name
+    if not path.exists() or not path.is_file():
+        return web.json_response({"error": "Log not found"}, status=404)
+    try:
+        text = path.read_text(encoding="utf-8", errors="replace")
+        if len(text) > 500000:
+            text = text[-500000:]
+        return web.json_response({"name": name, "content": text})
+    except Exception as exc:
+        return web.json_response({"error": str(exc)}, status=500)
+
+
+# ---------------------------------------------------------------------------
+# Firmware version info
+# ---------------------------------------------------------------------------
+
+async def fw_version_info(request):
+    body = await request.json()
+    host = body.get("idracHost", "")
+    user = body.get("idracUser", "root")
+    pw = body.get("idracPass", "")
+    if not host:
+        return web.json_response({"ok": False})
+    try:
+        status, data = await _idrac_request("GET", host, REDFISH_SYSTEM, user, pw)
+        info = {
+            "biosVersion": data.get("BiosVersion", ""),
+            "model": data.get("Model", ""),
+            "manufacturer": data.get("Manufacturer", ""),
+            "serialNumber": data.get("SerialNumber", ""),
+            "hostName": data.get("HostName", ""),
+        }
+        return web.json_response({"ok": True, **info})
+    except Exception as exc:
+        return web.json_response({"ok": False, "error": str(exc)})
 
 
 # ---------------------------------------------------------------------------
@@ -560,6 +613,9 @@ def create_app():
     app.router.add_post("/api/preflight", preflight_check)
     app.router.add_post("/api/upload", upload_file)
     app.router.add_post("/api/ssh-ready", ssh_ready_check)
+    app.router.add_get("/api/logs", list_logs)
+    app.router.add_get("/api/logs/{name}", read_log)
+    app.router.add_post("/api/fw-version", fw_version_info)
     app.router.add_post("/api/idrac/status", idrac_status)
     app.router.add_post("/api/idrac/poweron", idrac_poweron)
     app.router.add_post("/api/idrac/poweroff", idrac_poweroff)

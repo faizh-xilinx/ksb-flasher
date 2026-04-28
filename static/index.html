@@ -242,6 +242,14 @@
           On
         </button>
         <span class="toolbar-separator">|</span>
+        <button class="toolbar-btn" id="logs-btn" title="View session logs">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2h10v12H3zM6 5h4M6 8h4M6 11h2"/></svg>
+          Logs
+        </button>
+        <button class="toolbar-btn" id="fw-info-btn" title="Show firmware/system info from iDRAC">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="8" cy="8" r="6"/><path d="M8 5v1M8 8v3"/></svg>
+          Info
+        </button>
         <button class="toolbar-btn" id="upload-btn" title="Upload file to target">
           <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 10V3m0 0L5 6m3-3 3 3M2 11v2a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-2"/></svg>
           Upload
@@ -290,6 +298,25 @@
           <button class="toolbar-btn" id="upload-cancel">Cancel</button>
           <button class="connect-btn" id="upload-send" style="width:auto;padding:8px 24px;margin:0">Upload</button>
         </div>
+      </div>
+    </div>
+
+    <!-- Log viewer overlay -->
+    <div class="upload-overlay hidden" id="logs-overlay">
+      <div class="upload-panel" style="width:700px;max-height:80vh;display:flex;flex-direction:column">
+        <h3>Session Logs</h3>
+        <select id="log-select" style="width:100%;padding:8px;margin-bottom:8px;background:var(--bg-input);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:var(--font-mono);font-size:12px"><option value="">-- Select a log --</option></select>
+        <pre id="log-content" style="flex:1;overflow:auto;background:var(--bg-input);border:1px solid var(--border);border-radius:4px;padding:10px;font-family:var(--font-mono);font-size:11px;color:var(--text);white-space:pre-wrap;word-break:break-all;min-height:200px;max-height:50vh"></pre>
+        <div class="upload-actions"><button class="toolbar-btn" id="logs-close">Close</button></div>
+      </div>
+    </div>
+
+    <!-- FW Info overlay -->
+    <div class="upload-overlay hidden" id="fw-info-overlay">
+      <div class="upload-panel">
+        <h3>System / Firmware Info</h3>
+        <pre id="fw-info-content" style="background:var(--bg-input);border:1px solid var(--border);border-radius:4px;padding:12px;font-family:var(--font-mono);font-size:12px;color:var(--text);white-space:pre-wrap;min-height:80px">Loading...</pre>
+        <div class="upload-actions"><button class="toolbar-btn" id="fw-info-close">Close</button></div>
       </div>
     </div>
 

@@ -71,6 +71,15 @@
   const $powerOnBtn    = $("power-on-btn");
   const $sshDot        = $("ssh-dot");
   const $sshLabel      = $("ssh-label");
+  const $logsBtn       = $("logs-btn");
+  const $logsOverlay   = $("logs-overlay");
+  const $logSelect     = $("log-select");
+  const $logContent    = $("log-content");
+  const $logsClose     = $("logs-close");
+  const $fwInfoBtn     = $("fw-info-btn");
+  const $fwInfoOverlay = $("fw-info-overlay");
+  const $fwInfoContent = $("fw-info-content");
+  const $fwInfoClose   = $("fw-info-close");
 
   // -- State -----------------------------------------------------------
 
@@ -241,6 +250,20 @@
     // iDRAC power control
     $powerOffBtn.addEventListener("click", handlePowerOff);
     $powerOnBtn.addEventListener("click", handlePowerOn);
+
+    // Log viewer
+    $logsBtn.addEventListener("click", openLogViewer);
+    $logsClose.addEventListener("click", () => $logsOverlay.classList.add("hidden"));
+    $logSelect.addEventListener("change", loadSelectedLog);
+
+    // FW Info
+    $fwInfoBtn.addEventListener("click", openFwInfo);
+    $fwInfoClose.addEventListener("click", () => $fwInfoOverlay.classList.add("hidden"));
+
+    // Tab close protection
+    window.addEventListener("beforeunload", (e) => {
+      if (state.connected) { e.preventDefault(); e.returnValue = ""; }
+    });
   }
 
   // -- Profiles --------------------------------------------------------
@@ -281,7 +304,7 @@
     if (p.watchPatterns) $watchPatterns.value = p.watchPatterns;
     if (p.idracHost) $idracHost.value = p.idracHost;
     if (p.idracUser) $idracUser.value = p.idracUser;
-    if (p.idracPass) $idracPass.value = p.idracPass;
+    if (p.idracPass) $idracPass.value = deobfuscate(p.idracPass);
     $profileName.value = name;
   }
 
@@ -303,7 +326,7 @@
       watchPatterns: $watchPatterns.value.trim(),
       idracHost: $idracHost.value.trim(),
       idracUser: $idracUser.value.trim(),
-      idracPass: $idracPass.value,
+      idracPass: obfuscate($idracPass.value),
     };
     localStorage.setItem(PROFILES_KEY, JSON.stringify(state.profiles));
     renderProfileDropdown();
@@ -373,7 +396,7 @@
         if (entry.macros) state.macros = entry.macros;
         if (entry.idracHost) $idracHost.value = entry.idracHost;
         if (entry.idracUser) $idracUser.value = entry.idracUser;
-        if (entry.idracPass) $idracPass.value = entry.idracPass;
+        if (entry.idracPass) $idracPass.value = deobfuscate(entry.idracPass);
         $hostInput.focus();
       });
 
@@ -404,7 +427,7 @@
 
     state.watchPatterns = $watchPatterns.value.split(",").map(s => s.trim()).filter(Boolean);
 
-    hideError(); setConnecting(true);
+    hideError(); setConnecting(true, "Verifying jump host...");
 
     try {
       const result = await (await fetch("/api/preflight", {
@@ -413,6 +436,8 @@
       })).json();
       if (!result.ok) { showError(result.error); setConnecting(false); return; }
     } catch (err) { showError("Pre-flight failed: " + err.message); setConnecting(false); return; }
+
+    setConnecting(true, "Opening SSH sessions...");
 
     const idracHost = $idracHost.value.trim();
     const idracUser = $idracUser.value.trim() || "root";
@@ -423,7 +448,7 @@
     try {
       state.history = await (await fetch("/api/history", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ host, jumpUser, targetUser, jumpHost, commands, macros: state.macros, idracHost, idracUser, idracPass }),
+        body: JSON.stringify({ host, jumpUser, targetUser, jumpHost, commands, macros: state.macros, idracHost, idracUser, idracPass: obfuscate(idracPass) }),
       })).json();
     } catch {}
 
@@ -703,8 +728,10 @@
       } else {
         const bytes = new Uint8Array(event.data);
         term.write(bytes);
+        const text = textDecoder.decode(bytes);
+        if (name === "xsdb") checkFlashProgress(text);
         if (state.watchPatterns.length > 0) {
-          try { checkWatchPatterns(name, textDecoder.decode(bytes)); } catch {}
+          try { checkWatchPatterns(name, text); } catch {}
         }
       }
     };
@@ -753,9 +780,9 @@
 
   function parseCommands(text) { return text.split("\n").map(l => l.trimEnd()).filter(l => l.length > 0); }
 
-  function setConnecting(busy) {
+  function setConnecting(busy, msg) {
     $connectBtn.disabled = busy; $connectBtn.classList.toggle("connecting", busy);
-    $connectBtn.innerHTML = busy ? "Connecting\u2026" : '<svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6,3 16,9 6,15"/></svg> Connect';
+    $connectBtn.innerHTML = busy ? (msg || "Connecting\u2026") : '<svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6,3 16,9 6,15"/></svg> Connect';
   }
 
   // -- iDRAC power control ---------------------------------------------
@@ -888,6 +915,95 @@
     }, 10000);
   }
 
+  // -- Log viewer ------------------------------------------------------
+
+  async function openLogViewer() {
+    $logsOverlay.classList.remove("hidden");
+    $logContent.textContent = "Loading log list...";
+    $logSelect.innerHTML = '<option value="">-- Select a log --</option>';
+    try {
+      const logs = await (await fetch("/api/logs")).json();
+      for (const log of logs) {
+        const opt = document.createElement("option");
+        opt.value = log.name;
+        opt.textContent = `${log.name} (${(log.size / 1024).toFixed(1)} KB)`;
+        $logSelect.appendChild(opt);
+      }
+      $logContent.textContent = logs.length ? "Select a log file above" : "No logs found";
+    } catch (err) { $logContent.textContent = "Error: " + err.message; }
+  }
+
+  async function loadSelectedLog() {
+    const name = $logSelect.value;
+    if (!name) return;
+    $logContent.textContent = "Loading...";
+    try {
+      const result = await (await fetch(`/api/logs/${encodeURIComponent(name)}`)).json();
+      $logContent.textContent = result.content || result.error || "Empty log";
+      $logContent.scrollTop = $logContent.scrollHeight;
+    } catch (err) { $logContent.textContent = "Error: " + err.message; }
+  }
+
+  // -- FW / System Info ------------------------------------------------
+
+  async function openFwInfo() {
+    $fwInfoOverlay.classList.remove("hidden");
+    $fwInfoContent.textContent = "Loading...";
+    const p = getIdracParams();
+    if (!p) { $fwInfoContent.textContent = "No iDRAC configured"; return; }
+    try {
+      const result = await (await fetch("/api/fw-version", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(p),
+      })).json();
+      if (result.ok) {
+        $fwInfoContent.textContent = [
+          `Hostname:      ${result.hostName}`,
+          `Model:         ${result.model}`,
+          `Manufacturer:  ${result.manufacturer}`,
+          `Serial Number: ${result.serialNumber}`,
+          `BIOS Version:  ${result.biosVersion}`,
+        ].join("\n");
+      } else {
+        $fwInfoContent.textContent = "Error: " + (result.error || "Unknown");
+      }
+    } catch (err) { $fwInfoContent.textContent = "Error: " + err.message; }
+  }
+
+  // -- Flash progress tracking -----------------------------------------
+
+  let xsdbOutputBuffer = "";
+
+  function checkFlashProgress(text) {
+    const pctMatch = text.match(/(\d+)\s*%/);
+    if (pctMatch) {
+      const pct = parseInt(pctMatch[1]);
+      $statusBar.textContent = `Flash progress: ${pct}%`;
+    }
+    if (/successfully/i.test(text) || /100\s*%/.test(text)) {
+      $statusBar.textContent = "Flash complete";
+    }
+    if (/error|fail/i.test(text) && !/filter/i.test(text)) {
+      $statusBar.textContent = "Flash error detected";
+    }
+
+    xsdbOutputBuffer += text;
+    if (xsdbOutputBuffer.includes("KSB_DETECT_END")) {
+      const lines = xsdbOutputBuffer.split("\n");
+      const targets = [];
+      for (const line of lines) {
+        const m = line.match(/KSB_T:(\d+):(.+)/);
+        if (m) targets.push({ id: m[1], name: m[2].trim() });
+      }
+      xsdbOutputBuffer = "";
+      if (targets.length > 0) {
+        const info = targets.map(t => `ta ${t.id} = ${t.name}`).join(" | ");
+        $statusBar.textContent = `Targets: ${info}`;
+      }
+    }
+    if (xsdbOutputBuffer.length > 10000) xsdbOutputBuffer = xsdbOutputBuffer.slice(-5000);
+  }
+
   // -- Theme toggle ----------------------------------------------------
 
   function toggleTheme(force) {
@@ -929,7 +1045,7 @@
       watchPatterns: $watchPatterns.value.trim(),
       idracHost: $idracHost.value.trim(),
       idracUser: $idracUser.value.trim(),
-      idracPass: $idracPass.value,
+      idracPass: obfuscate($idracPass.value),
       profiles: state.profiles,
     };
     const blob = new Blob([JSON.stringify(config, null, 2)], { type: "application/json" });
@@ -961,7 +1077,7 @@
         if (config.watchPatterns) $watchPatterns.value = config.watchPatterns;
         if (config.idracHost) $idracHost.value = config.idracHost;
         if (config.idracUser) $idracUser.value = config.idracUser;
-        if (config.idracPass) $idracPass.value = config.idracPass;
+        if (config.idracPass) $idracPass.value = deobfuscate(config.idracPass);
         if (config.profiles) {
           Object.assign(state.profiles, config.profiles);
           localStorage.setItem(PROFILES_KEY, JSON.stringify(state.profiles));
@@ -978,6 +1094,9 @@
   function showError(msg) { $connectError.textContent = msg; $connectError.classList.add("visible"); }
   function hideError()    { $connectError.classList.remove("visible"); $connectError.textContent = ""; }
   function esc(str) { const d = document.createElement("div"); d.textContent = str; return d.innerHTML; }
+
+  function obfuscate(s) { try { return s ? btoa(s) : ""; } catch { return ""; } }
+  function deobfuscate(s) { try { return s ? atob(s) : ""; } catch { return s || ""; } }
 
   function relativeTime(iso) {
     if (!iso) return "";
