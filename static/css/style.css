@@ -930,6 +930,87 @@ select#profile-select option {
   background: var(--accent);
 }
 
+/* ── Light theme ────────────────────────────────────────────────────── */
+
+html.light {
+  --bg-primary:    #f0f2f5;
+  --bg-secondary:  #e4e7ec;
+  --bg-card:       rgba(255, 255, 255, 0.92);
+  --bg-input:      rgba(0, 0, 0, 0.04);
+  --bg-input-focus:rgba(0, 0, 0, 0.07);
+  --bg-hover:      rgba(0, 0, 0, 0.06);
+  --border:        rgba(0, 0, 0, 0.1);
+  --border-focus:  rgba(0, 120, 200, 0.5);
+  --text:          #1e293b;
+  --text-muted:    #64748b;
+  --text-dim:      #94a3b8;
+  --accent:        #0078c8;
+  --accent2:       #6d28d9;
+}
+
+html.light ::selection { background: rgba(0, 120, 200, 0.2); }
+html.light .pane-body { background: #ffffff; }
+html.light .connect-card {
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.05), 0 24px 80px -12px rgba(0,0,0,0.15);
+}
+html.light select#profile-select option { background: #fff; color: #1e293b; }
+
+/* ── Font size controls ─────────────────────────────────────────────── */
+
+.font-controls {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.font-btn {
+  padding: 3px 6px;
+  font-size: 10px;
+  font-weight: 700;
+  min-width: 0;
+}
+
+.font-size-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-dim);
+  min-width: 18px;
+  text-align: center;
+}
+
+/* ── Config export/import ───────────────────────────────────────────── */
+
+.config-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.config-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex: 1;
+  justify-content: center;
+  padding: 6px 10px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.config-action-btn:hover {
+  background: var(--bg-hover);
+  border-color: rgba(0, 212, 255, 0.25);
+  color: var(--accent);
+}
+
 /* ── Utilities ──────────────────────────────────────────────────────── */
 
 .hidden { display: none !important; }

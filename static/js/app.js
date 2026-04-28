@@ -49,6 +49,15 @@
   const $searchNext    = $("search-next");
   const $searchClose   = $("search-close");
   const $searchPaneLabel = $("search-pane-label");
+  const $themeToggle   = $("theme-toggle-btn");
+  const $fontUp        = $("font-up");
+  const $fontDown      = $("font-down");
+  const $fontSizeLabel = $("font-size-label");
+  const $broadcastToggle = $("broadcast-toggle");
+  const $broadcastCheckbox = $("broadcast-checkbox");
+  const $exportBtn     = $("export-config-btn");
+  const $importBtn     = $("import-config-btn");
+  const $importFile    = $("import-config-file");
 
   // -- State -----------------------------------------------------------
 
@@ -66,6 +75,8 @@
     profiles: {},
     watchPatterns: [],
     focusedPane: "xsdb",
+    fontSize: 13,
+    lightTheme: false,
   };
 
   const XTERM_THEME = {
@@ -78,6 +89,18 @@
     brightBlack: "#475569", brightRed:   "#f87171", brightGreen: "#34d399",
     brightYellow:"#fbbf24", brightBlue:  "#60a5fa", brightMagenta:"#c084fc",
     brightCyan:  "#67e8f9", brightWhite: "#f1f5f9",
+  };
+
+  const XTERM_THEME_LIGHT = {
+    background:  "#ffffff", foreground:  "#1e293b",
+    cursor:      "#0078c8", cursorAccent:"#ffffff",
+    selectionBackground: "rgba(0, 120, 200, 0.18)",
+    black:   "#e2e8f0", red:     "#dc2626", green:   "#059669",
+    yellow:  "#d97706", blue:    "#2563eb", magenta: "#7c3aed",
+    cyan:    "#0078c8", white:   "#1e293b",
+    brightBlack: "#94a3b8", brightRed:   "#ef4444", brightGreen: "#10b981",
+    brightYellow:"#f59e0b", brightBlue:  "#3b82f6", brightMagenta:"#a855f7",
+    brightCyan:  "#0ea5e9", brightWhite: "#0f172a",
   };
 
   const PROFILES_KEY = "ksb_flasher_profiles";
@@ -164,10 +187,33 @@
     // Resizable dividers
     initResizableDividers();
 
-    // Request notification permission
     if ("Notification" in window && Notification.permission === "default") {
       Notification.requestPermission();
     }
+
+    // Theme toggle
+    if (localStorage.getItem("ksb_theme") === "light") toggleTheme(true);
+    $themeToggle.addEventListener("click", () => toggleTheme());
+
+    // Font size (Ctrl+/-)
+    $fontUp.addEventListener("click", () => changeFontSize(1));
+    $fontDown.addEventListener("click", () => changeFontSize(-1));
+    document.addEventListener("keydown", (e) => {
+      if (!state.connected) return;
+      if ((e.ctrlKey || e.metaKey) && (e.key === "=" || e.key === "+")) { e.preventDefault(); changeFontSize(1); }
+      if ((e.ctrlKey || e.metaKey) && e.key === "-") { e.preventDefault(); changeFontSize(-1); }
+      if ((e.ctrlKey || e.metaKey) && e.key === "0") { e.preventDefault(); changeFontSize(0); }
+    });
+
+    // Broadcast toggle
+    $broadcastCheckbox.addEventListener("change", () => {
+      $broadcastToggle.classList.toggle("active", $broadcastCheckbox.checked);
+    });
+
+    // Export / Import config
+    $exportBtn.addEventListener("click", exportConfig);
+    $importBtn.addEventListener("click", () => $importFile.click());
+    $importFile.addEventListener("change", importConfig);
   }
 
   // -- Profiles --------------------------------------------------------
@@ -535,9 +581,9 @@
       container.innerHTML = "";
 
       const term = new Terminal({
-        theme: XTERM_THEME,
+        theme: state.lightTheme ? XTERM_THEME_LIGHT : XTERM_THEME,
         fontFamily: '"JetBrains Mono", "Cascadia Code", "Fira Code", monospace',
-        fontSize: 13, lineHeight: 1.35, cursorBlink: true, cursorStyle: "bar",
+        fontSize: state.fontSize, lineHeight: 1.35, cursorBlink: true, cursorStyle: "bar",
         scrollback: 10000, allowProposedApi: true,
       });
 
@@ -610,7 +656,17 @@
     ws.onclose = () => { statusDot.className = "status-dot error"; term.writeln("\r\n\x1b[33m[Session closed]\x1b[0m"); updateStatusBar(); };
     ws.onerror = () => { statusDot.className = "status-dot error"; updateStatusBar(); };
 
-    term.onData((data) => { if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type: "input", data })); });
+    term.onData((data) => {
+      if ($broadcastCheckbox.checked) {
+        for (const n of TERMINAL_DEFS) {
+          const s = state.terminals[n];
+          if (s && s.ws && s.ws.readyState === WebSocket.OPEN)
+            s.ws.send(JSON.stringify({ type: "input", data }));
+        }
+      } else {
+        if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type: "input", data }));
+      }
+    });
     term.onResize(({ cols, rows }) => { if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type: "resize", cols, rows })); });
   }
 
@@ -645,6 +701,86 @@
     $connectBtn.disabled = busy; $connectBtn.classList.toggle("connecting", busy);
     $connectBtn.innerHTML = busy ? "Connecting\u2026" : '<svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6,3 16,9 6,15"/></svg> Connect';
   }
+
+  // -- Theme toggle ----------------------------------------------------
+
+  function toggleTheme(force) {
+    state.lightTheme = force !== undefined ? force : !state.lightTheme;
+    document.documentElement.classList.toggle("light", state.lightTheme);
+    localStorage.setItem("ksb_theme", state.lightTheme ? "light" : "dark");
+    const theme = state.lightTheme ? XTERM_THEME_LIGHT : XTERM_THEME;
+    for (const name of TERMINAL_DEFS) {
+      const t = state.terminals[name];
+      if (t && t.term) t.term.options.theme = theme;
+    }
+  }
+
+  // -- Font size -------------------------------------------------------
+
+  function changeFontSize(delta) {
+    if (delta === 0) state.fontSize = 13;
+    else state.fontSize = Math.max(8, Math.min(24, state.fontSize + delta));
+    $fontSizeLabel.textContent = state.fontSize;
+    for (const name of TERMINAL_DEFS) {
+      const t = state.terminals[name];
+      if (t && t.term) {
+        t.term.options.fontSize = state.fontSize;
+        try { t.fitAddon.fit(); } catch {}
+      }
+    }
+  }
+
+  // -- Export / Import config ------------------------------------------
+
+  function exportConfig() {
+    const config = {
+      jumpHost: $jumpInput.value.trim(),
+      host: $hostInput.value.trim(),
+      jumpUser: $jumpUserInput.value.trim(),
+      targetUser: $targetUserInput.value.trim(),
+      commands: { sec: parseCommands($cmdSec.value), nmc: parseCommands($cmdNmc.value), xsdb: parseCommands($cmdXsdb.value) },
+      macros: state.macros,
+      watchPatterns: $watchPatterns.value.trim(),
+      profiles: state.profiles,
+    };
+    const blob = new Blob([JSON.stringify(config, null, 2)], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `ksb_flasher_config_${$hostInput.value.trim().replace(/\./g, "_") || "export"}.json`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
+  function importConfig(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const config = JSON.parse(ev.target.result);
+        if (config.jumpHost !== undefined) $jumpInput.value = config.jumpHost;
+        if (config.host !== undefined) $hostInput.value = config.host;
+        if (config.jumpUser !== undefined) $jumpUserInput.value = config.jumpUser;
+        if (config.targetUser !== undefined) $targetUserInput.value = config.targetUser;
+        if (config.commands) {
+          if (config.commands.sec) $cmdSec.value = config.commands.sec.join("\n");
+          if (config.commands.nmc) $cmdNmc.value = config.commands.nmc.join("\n");
+          if (config.commands.xsdb) $cmdXsdb.value = config.commands.xsdb.join("\n");
+        }
+        if (config.macros) state.macros = config.macros;
+        if (config.watchPatterns) $watchPatterns.value = config.watchPatterns;
+        if (config.profiles) {
+          Object.assign(state.profiles, config.profiles);
+          localStorage.setItem(PROFILES_KEY, JSON.stringify(state.profiles));
+          renderProfileDropdown();
+        }
+      } catch { showError("Invalid config JSON file"); }
+    };
+    reader.readAsText(file);
+    $importFile.value = "";
+  }
+
+  // -- Helpers ---------------------------------------------------------
 
   function showError(msg) { $connectError.textContent = msg; $connectError.classList.add("visible"); }
   function hideError()    { $connectError.classList.remove("visible"); $connectError.textContent = ""; }
