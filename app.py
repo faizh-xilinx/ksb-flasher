@@ -95,9 +95,7 @@ DEFAULT_TERMINALS = {
     },
     "console": {
         "label": "iDRAC Console (SOL)",
-        "commands": [
-            "ssh -o StrictHostKeyChecking=no ${IDRAC_USER}@${IDRAC_HOST}",
-        ],
+        "commands": [],
     },
     "xsdb": {
         "label": "XSDB",

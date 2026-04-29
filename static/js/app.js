@@ -442,7 +442,8 @@
     if (consoleCmds.length === 0 && $idracHost.value.trim()) {
       const iu = $idracUser.value.trim() || "root";
       const ih = $idracHost.value.trim();
-      consoleCmds = [`ssh -o StrictHostKeyChecking=no ${iu}@${ih}`];
+      const ip = $idracPass.value || "calvin";
+      consoleCmds = [`ipmitool -I lanplus -H ${ih} -U ${iu} -P ${ip} sol activate`];
       $cmdConsole.value = consoleCmds[0];
     }
     const commands = { sec: parseCommands($cmdSec.value), nmc: parseCommands($cmdNmc.value), apu: parseCommands($cmdApu.value), xsdb: parseCommands($cmdXsdb.value), console: consoleCmds };
