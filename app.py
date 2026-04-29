@@ -368,7 +368,7 @@ async def upload_file(request):
 # ---------------------------------------------------------------------------
 
 async def ssh_ready_check(request):
-    """Check if SSH port is reachable on the target host (via jump host)."""
+    """Check if target host is reachable (ping) via jump host."""
     data = await request.json()
     host = data.get("host", "")
     jump_user = data.get("jumpUser") or None
@@ -386,7 +386,7 @@ async def ssh_ready_check(request):
             )
             result = await asyncio.wait_for(
                 conn.run(
-                    f"bash -c 'echo > /dev/tcp/{host}/22' 2>/dev/null && echo READY || echo NOPE",
+                    f"ping -c1 -W2 {host} >/dev/null 2>&1 && echo READY || echo NOPE",
                     check=False,
                 ),
                 timeout=8,

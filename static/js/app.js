@@ -854,7 +854,7 @@
 
   function setSshDisplay(ready) {
     $sshDot.className = "power-dot " + (ready ? "on" : "off");
-    $sshLabel.textContent = ready ? "SSH" : "SSH?";
+    $sshLabel.textContent = ready ? "HOST" : "HOST?";
   }
 
   async function handlePowerOff() {
