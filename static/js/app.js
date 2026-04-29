@@ -734,6 +734,7 @@
       ws.send(JSON.stringify({
         type: "init", host, jumpUser, targetUser, password, jumpHost,
         commands, cols, rows, sessionName: name, enableLogging: $loggingCheckbox.checked,
+        stayOnJumpHost: name === "console",
       }));
     };
 

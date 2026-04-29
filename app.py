@@ -545,8 +545,9 @@ async def ws_terminal(request):
             }))
             return ws
 
+        stay_on_jump = init.get("stayOnJumpHost", False)
         shell_cmd = None
-        if jump_host:
+        if jump_host and not stay_on_jump:
             user_flag = f"-l {target_user} " if target_user else ""
             shell_cmd = f"ssh -o StrictHostKeyChecking=no -tt {user_flag}{host}"
 
