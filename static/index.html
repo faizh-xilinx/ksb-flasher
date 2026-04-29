@@ -151,6 +151,10 @@
             <textarea id="cmd-xsdb" rows="5" spellcheck="false"></textarea>
           </div>
           <div class="cmd-group">
+            <label>iDRAC Console (SOL)</label>
+            <textarea id="cmd-console" rows="2" spellcheck="false"></textarea>
+          </div>
+          <div class="cmd-group">
             <label>Watch Patterns (desktop alert on match, comma-separated)</label>
             <input type="text" id="watch-patterns" placeholder="e.g. DONE, ERROR, Programming successful" spellcheck="false" />
           </div>
@@ -213,6 +217,11 @@
           <input type="checkbox" id="xsdb-checkbox" />
           <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><rect x="2" y="3" width="12" height="10" rx="1"/><path d="M8 3v10M2 8h12"/></svg>
           XSDB
+        </label>
+        <label class="toolbar-btn toolbar-toggle" id="console-toggle" title="Show/hide iDRAC SOL Console">
+          <input type="checkbox" id="console-checkbox" />
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><rect x="2" y="2" width="12" height="12" rx="1"/><path d="M5 6l2 2-2 2M9 10h3"/></svg>
+          SOL
         </label>
         <label class="toolbar-btn toolbar-toggle" id="broadcast-toggle" title="Broadcast input to all panes">
           <input type="checkbox" id="broadcast-checkbox" />
@@ -371,6 +380,22 @@
           </button>
         </div>
         <div class="pane-body" id="term-xsdb"></div>
+      </div>
+    </div>
+
+    <!-- Console pane (bottom, togglable) -->
+    <div class="console-row console-element hidden" id="console-row">
+      <div class="grid-divider grid-divider-h" id="div-console-h"></div>
+      <div class="terminal-pane" id="pane-console">
+        <div class="pane-header">
+          <span class="status-dot" id="status-console"></span>
+          <span class="pane-title">iDRAC Console (SOL)</span>
+          <span class="pane-spacer"></span>
+          <button class="pane-btn" id="reconnect-console" title="Reconnect this pane">
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 4v4h4M15 12V8h-4"/><path d="M2.5 10.5a6 6 0 0 0 10.2 1.8M13.5 5.5a6 6 0 0 0-10.2-1.8"/></svg>
+          </button>
+        </div>
+        <div class="pane-body" id="term-console"></div>
       </div>
     </div>
 

@@ -80,11 +80,15 @@
   const $fwInfoOverlay = $("fw-info-overlay");
   const $fwInfoContent = $("fw-info-content");
   const $fwInfoClose   = $("fw-info-close");
+  const $consoleToggle = $("console-toggle");
+  const $consoleCheckbox = $("console-checkbox");
+  const $consoleRow    = $("console-row");
+  const $cmdConsole    = $("cmd-console");
 
   // -- State -----------------------------------------------------------
 
-  const TERMINAL_DEFS = ["sec", "nmc", "apu", "xsdb"];
-  const TERMINAL_LABELS = { sec: "SEC", nmc: "NMC", apu: "APU", xsdb: "XSDB" };
+  const TERMINAL_DEFS = ["sec", "nmc", "apu", "xsdb", "console"];
+  const TERMINAL_LABELS = { sec: "SEC", nmc: "NMC", apu: "APU", xsdb: "XSDB", console: "SOL" };
 
   const state = {
     connected: false,
@@ -237,6 +241,14 @@
       fitAllTerminals();
     });
 
+    // Console pane toggle
+    $consoleCheckbox.addEventListener("change", () => {
+      const on = $consoleCheckbox.checked;
+      $consoleToggle.classList.toggle("active", on);
+      document.querySelectorAll(".console-element").forEach(el => el.classList.toggle("hidden", !on));
+      fitAllTerminals();
+    });
+
     // Broadcast toggle
     $broadcastCheckbox.addEventListener("change", () => {
       $broadcastToggle.classList.toggle("active", $broadcastCheckbox.checked);
@@ -299,6 +311,7 @@
       if (p.commands.nmc)  $cmdNmc.value  = p.commands.nmc.join("\n");
       if (p.commands.apu)  $cmdApu.value  = p.commands.apu.join("\n");
       if (p.commands.xsdb) $cmdXsdb.value = p.commands.xsdb.join("\n");
+      if (p.commands.console) $cmdConsole.value = p.commands.console.join("\n");
     }
     if (p.macros) state.macros = p.macros;
     if (p.watchPatterns) $watchPatterns.value = p.watchPatterns;
@@ -321,6 +334,7 @@
         nmc:  parseCommands($cmdNmc.value),
         apu:  parseCommands($cmdApu.value),
         xsdb: parseCommands($cmdXsdb.value),
+        console: parseCommands($cmdConsole.value),
       },
       macros: state.macros,
       watchPatterns: $watchPatterns.value.trim(),
@@ -392,6 +406,7 @@
           if (entry.commands.nmc) $cmdNmc.value = entry.commands.nmc.join("\n");
           if (entry.commands.apu) $cmdApu.value = entry.commands.apu.join("\n");
           if (entry.commands.xsdb) $cmdXsdb.value = entry.commands.xsdb.join("\n");
+          if (entry.commands.console) $cmdConsole.value = entry.commands.console.join("\n");
         }
         if (entry.macros) state.macros = entry.macros;
         if (entry.idracHost) $idracHost.value = entry.idracHost;
@@ -423,7 +438,14 @@
     const jumpUser = $jumpUserInput.value.trim() || undefined;
     const targetUser = $targetUserInput.value.trim() || undefined;
     const password = $passInput.value || undefined;
-    const commands = { sec: parseCommands($cmdSec.value), nmc: parseCommands($cmdNmc.value), apu: parseCommands($cmdApu.value), xsdb: parseCommands($cmdXsdb.value) };
+    let consoleCmds = parseCommands($cmdConsole.value);
+    if (consoleCmds.length === 0 && $idracHost.value.trim()) {
+      const iu = $idracUser.value.trim() || "root";
+      const ih = $idracHost.value.trim();
+      consoleCmds = [`ssh -o StrictHostKeyChecking=no ${iu}@${ih}`];
+      $cmdConsole.value = consoleCmds[0];
+    }
+    const commands = { sec: parseCommands($cmdSec.value), nmc: parseCommands($cmdNmc.value), apu: parseCommands($cmdApu.value), xsdb: parseCommands($cmdXsdb.value), console: consoleCmds };
 
     state.watchPatterns = $watchPatterns.value.split(",").map(s => s.trim()).filter(Boolean);
 
@@ -689,6 +711,7 @@
     connectTerminal("nmc",  host, jumpUser, targetUser, password, jumpHost, commands.nmc);
     connectTerminal("apu",  host, jumpUser, targetUser, password, jumpHost, commands.apu);
     connectTerminal("xsdb", host, jumpUser, targetUser, password, jumpHost, commands.xsdb);
+    connectTerminal("console", host, jumpUser, targetUser, password, jumpHost, commands.console);
     updateStatusBar();
   }
 
@@ -1040,7 +1063,7 @@
       host: $hostInput.value.trim(),
       jumpUser: $jumpUserInput.value.trim(),
       targetUser: $targetUserInput.value.trim(),
-      commands: { sec: parseCommands($cmdSec.value), nmc: parseCommands($cmdNmc.value), apu: parseCommands($cmdApu.value), xsdb: parseCommands($cmdXsdb.value) },
+      commands: { sec: parseCommands($cmdSec.value), nmc: parseCommands($cmdNmc.value), apu: parseCommands($cmdApu.value), xsdb: parseCommands($cmdXsdb.value), console: parseCommands($cmdConsole.value) },
       macros: state.macros,
       watchPatterns: $watchPatterns.value.trim(),
       idracHost: $idracHost.value.trim(),
@@ -1072,6 +1095,7 @@
           if (config.commands.nmc) $cmdNmc.value = config.commands.nmc.join("\n");
           if (config.commands.apu) $cmdApu.value = config.commands.apu.join("\n");
           if (config.commands.xsdb) $cmdXsdb.value = config.commands.xsdb.join("\n");
+          if (config.commands.console) $cmdConsole.value = config.commands.console.join("\n");
         }
         if (config.macros) state.macros = config.macros;
         if (config.watchPatterns) $watchPatterns.value = config.watchPatterns;

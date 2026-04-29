@@ -93,6 +93,12 @@ DEFAULT_TERMINALS = {
             "minicom -D /dev/tty_ndr7515b_apu -b 115200",
         ],
     },
+    "console": {
+        "label": "iDRAC Console (SOL)",
+        "commands": [
+            "ssh -o StrictHostKeyChecking=no ${IDRAC_USER}@${IDRAC_HOST}",
+        ],
+    },
     "xsdb": {
         "label": "XSDB",
         "commands": [

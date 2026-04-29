@@ -1078,6 +1078,26 @@ html.light select#profile-select option { background: #fff; color: #1e293b; }
   color: var(--accent);
 }
 
+/* ── Console (SOL) bottom row ───────────────────────────────────────── */
+
+.console-row {
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 30%;
+  max-height: 40%;
+  min-height: 100px;
+}
+
+.console-row .terminal-pane {
+  flex: 1;
+  min-height: 0;
+}
+
+.console-row .grid-divider-h {
+  height: 5px;
+  cursor: row-resize;
+}
+
 /* ── Utilities ──────────────────────────────────────────────────────── */
 
 .hidden { display: none !important; }
