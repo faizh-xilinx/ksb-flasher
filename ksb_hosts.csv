@@ -1,0 +1,8 @@
+s_no,host_name,host_idrac_ip,partner_machine,partner_machine_idrac_ip,card_power_server,card_power_port
+1,ndr7515b.xndlab.xilinx.com,10.170.92.61,ndr730j.xndlab.xilinx.com,10.170.92.25,http://10.170.92.65/NMC/SmBii5wL4OuyrF6FndAjDw/outlctrl.htm,1
+2,ndr7515c.xndlab.xilinx.com,10.170.92.62,ndr730j.xndlab.xilinx.com,10.170.92.25,http://10.170.92.65/NMC/SmBii5wL4OuyrF6FndAjDw/outlctrl.htm,10
+3,ndt640a.xndlab.xilinx.com,10.170.92.21,ndt640e.xndlab.xilinx.com,10.170.92.13,http://10.170.92.36/NMC/cUNEw0HSFN+Ba7NrQvhacA/outlctrl.htm,6
+4,ndt640b.xndlab.xilinx.com,10.170.92.12,ndt640e.xndlab.xilinx.com,10.170.92.13,http://10.170.92.36/NMC/cUNEw0HSFN+Ba7NrQvhacA/outlctrl.htm,15
+5,purico-5e2b.xndlab.xilinx.com,10.170.92.75,ndr730j.xndlab.xilinx.com,10.170.92.25,http://10.170.92.65/NMC/ej40Pmof6KLDNkeskdyR5w/outlctrl.htm,15
+6,galena-aece.xndlab.xilinx.com,10.170.92.78,ndt640c.xndlab.xilinx.com,10.170.92.54,https://10.170.92.77/logon.htm,3
+7,ndr730q.xndlab.xilinx.com,10.170.92.40,ndr730j.xndlab.xilinx.com,10.170.92.25,http://10.170.92.65/NMC/SmBii5wL4OuyrF6FndAjDw/outlctrl.htm,19

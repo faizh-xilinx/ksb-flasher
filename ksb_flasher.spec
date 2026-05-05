@@ -4,7 +4,7 @@ a = Analysis(
     ['app.py'],
     pathex=[],
     binaries=[],
-    datas=[('static', 'static')],
+    datas=[('static', 'static'), ('ksb_hosts.csv', '.')],
     hiddenimports=['asyncssh', 'asyncssh.crypto'],
     hookspath=[],
     hooksconfig={},

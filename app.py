@@ -7,6 +7,7 @@ images on SmartNIC cards via SSH.
 """
 
 import asyncio
+import csv
 import json
 import os
 import sys
@@ -41,6 +42,7 @@ def _find_client_keys():
 
 STATIC_DIR = _base_dir() / "static"
 HISTORY_FILE = _data_dir() / "connection_history.json"
+HOSTS_CSV = _base_dir() / "ksb_hosts.csv"
 LOGS_DIR = _data_dir() / "logs"
 PORT = 8765
 
@@ -241,11 +243,32 @@ async def fw_version_info(request):
 
 
 # ---------------------------------------------------------------------------
+# Lab hosts database
+# ---------------------------------------------------------------------------
+
+def load_lab_hosts():
+    if not HOSTS_CSV.exists():
+        return []
+    hosts = []
+    try:
+        with open(HOSTS_CSV, encoding="utf-8") as f:
+            for row in csv.DictReader(f):
+                hosts.append(row)
+    except Exception:
+        pass
+    return hosts
+
+
+# ---------------------------------------------------------------------------
 # REST API handlers
 # ---------------------------------------------------------------------------
 
 async def index_handler(request):
     return web.FileResponse(STATIC_DIR / "index.html")
+
+
+async def get_lab_hosts(request):
+    return web.json_response(load_lab_hosts())
 
 
 async def get_history(request):
@@ -368,14 +391,15 @@ async def upload_file(request):
 # ---------------------------------------------------------------------------
 
 async def ssh_ready_check(request):
-    """Check if target host is reachable (ping) via jump host."""
+    """Check if host is reachable (ping) via jump host.
+    Uses hostIp if provided, otherwise falls back to host."""
     data = await request.json()
-    host = data.get("host", "")
+    host_ip = data.get("hostIp") or data.get("host", "")
     jump_user = data.get("jumpUser") or None
     jump_host = data.get("jumpHost") or None
     password = data.get("password") or None
 
-    if not host:
+    if not host_ip:
         return web.json_response({"ready": False})
 
     conn = None
@@ -386,7 +410,7 @@ async def ssh_ready_check(request):
             )
             result = await asyncio.wait_for(
                 conn.run(
-                    f"ping -c1 -W2 {host} >/dev/null 2>&1 && echo READY || echo NOPE",
+                    f"ping -c1 -W2 {host_ip} >/dev/null 2>&1 && echo READY || echo NOPE",
                     check=False,
                 ),
                 timeout=8,
@@ -394,7 +418,7 @@ async def ssh_ready_check(request):
             ready = "READY" in (result.stdout or "")
         else:
             conn = await asyncio.wait_for(
-                _connect_jump(host, jump_user, password), timeout=8
+                _connect_jump(host_ip, jump_user, password), timeout=8
             )
             ready = True
     except Exception:
@@ -637,6 +661,7 @@ def create_app():
     app.router.add_post("/api/history", post_history)
     app.router.add_delete("/api/history/{idx}", delete_history_entry)
     app.router.add_get("/api/defaults", get_defaults)
+    app.router.add_get("/api/lab-hosts", get_lab_hosts)
     app.router.add_post("/api/preflight", preflight_check)
     app.router.add_post("/api/upload", upload_file)
     app.router.add_post("/api/ssh-ready", ssh_ready_check)

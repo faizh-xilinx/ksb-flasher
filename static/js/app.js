@@ -10,7 +10,9 @@
   const $ = (id) => document.getElementById(id);
   const $connectScreen = $("connect-screen");
   const $termScreen    = $("terminal-screen");
+  const $labHostSelect = $("lab-host-select");
   const $jumpInput     = $("jump-input");
+  const $hostIpInput   = $("host-ip-input");
   const $hostInput     = $("host-input");
   const $jumpUserInput = $("jump-user-input");
   const $targetUserInput = $("target-user-input");
@@ -99,6 +101,7 @@
     watchPatterns: [],
     focusedPane: "xsdb",
     fontSize: 13,
+    labHosts: [],
     lightTheme: false,
   };
 
@@ -134,7 +137,9 @@
     await loadDefaults();
     await loadHistory();
     loadProfiles();
+    await loadLabHosts();
 
+    $labHostSelect.addEventListener("change", applyLabHost);
     $cmdToggle.addEventListener("click", toggleCmdEditor);
     $connectBtn.addEventListener("click", handleConnect);
     $disconnectBtn.addEventListener("click", handleDisconnect);
@@ -350,6 +355,31 @@
     $profileName.value = "";
   }
 
+  // -- Lab Hosts -------------------------------------------------------
+
+  async function loadLabHosts() {
+    try {
+      state.labHosts = await (await fetch("/api/lab-hosts")).json();
+    } catch { state.labHosts = []; }
+    $labHostSelect.innerHTML = '<option value="">-- Manual Entry --</option>';
+    state.labHosts.forEach((h, i) => {
+      const opt = document.createElement("option");
+      opt.value = i;
+      opt.textContent = `${h.host_name} → ${h.partner_machine}`;
+      $labHostSelect.appendChild(opt);
+    });
+  }
+
+  function applyLabHost() {
+    const idx = $labHostSelect.value;
+    if (idx === "") return;
+    const h = state.labHosts[parseInt(idx)];
+    if (!h) return;
+    $hostInput.value = h.partner_machine || "";
+    $hostIpInput.value = h.host_name || "";
+    $idracHost.value = h.host_idrac_ip || "";
+  }
+
   // -- Defaults & History ----------------------------------------------
 
   async function loadDefaults() {
@@ -405,6 +435,7 @@
         if (entry.idracHost) $idracHost.value = entry.idracHost;
         if (entry.idracUser) $idracUser.value = entry.idracUser;
         if (entry.idracPass) $idracPass.value = deobfuscate(entry.idracPass);
+        if (entry.hostIp) $hostIpInput.value = entry.hostIp;
         $hostInput.focus();
       });
 
@@ -450,13 +481,14 @@
     const idracHost = $idracHost.value.trim();
     const idracUser = $idracUser.value.trim() || "root";
     const idracPass = $idracPass.value;
+    const hostIp = $hostIpInput.value.trim();
 
-    state.connParams = { host, jumpHost, jumpUser, targetUser, password, commands, idracHost, idracUser, idracPass };
+    state.connParams = { host, jumpHost, jumpUser, targetUser, password, commands, idracHost, idracUser, idracPass, hostIp };
 
     try {
       state.history = await (await fetch("/api/history", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ host, jumpUser, targetUser, jumpHost, commands, macros: state.macros, idracHost, idracUser, idracPass: obfuscate(idracPass) }),
+        body: JSON.stringify({ host, jumpUser, targetUser, jumpHost, commands, macros: state.macros, idracHost, idracUser, idracPass: obfuscate(idracPass), hostIp }),
       })).json();
     } catch {}
 
@@ -464,7 +496,8 @@
     $termScreen.classList.add("active");
     const via = jumpHost ? ` via ${jumpUser ? jumpUser + "@" : ""}${jumpHost}` : "";
     const idracLabel = idracHost ? ` | iDRAC: ${idracHost}` : "";
-    $toolbarHost.textContent = `${targetUser ? targetUser + "@" : ""}${host}${via}${idracLabel}`;
+    const hostLabel = hostIp ? ` | Host: ${hostIp}` : "";
+    $toolbarHost.textContent = `${targetUser ? targetUser + "@" : ""}${host}${via}${hostLabel}${idracLabel}`;
 
     buildMacroBar();
     await createAllTerminals();
@@ -842,11 +875,11 @@
 
   async function fetchSshStatus() {
     if (!state.connParams) { setSshDisplay(false); return; }
-    const { host, jumpHost, jumpUser, password } = state.connParams;
+    const { host, jumpHost, jumpUser, password, hostIp } = state.connParams;
     try {
       const result = await (await fetch("/api/ssh-ready", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ host, jumpHost, jumpUser, password }),
+        body: JSON.stringify({ host, jumpHost, jumpUser, password, hostIp }),
       })).json();
       setSshDisplay(result.ready);
     } catch { setSshDisplay(false); }
@@ -902,11 +935,11 @@
     sshReadyTimer = setInterval(async () => {
       attempts++;
       if (attempts > 60) { clearInterval(sshReadyTimer); return; }
-      const { host, jumpHost, jumpUser, password } = state.connParams;
+      const { host, jumpHost, jumpUser, password, hostIp } = state.connParams;
       try {
         const result = await (await fetch("/api/ssh-ready", {
           method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ host, jumpHost, jumpUser, password }),
+          body: JSON.stringify({ host, jumpHost, jumpUser, password, hostIp }),
         })).json();
         if (result.ready) {
           clearInterval(sshReadyTimer);

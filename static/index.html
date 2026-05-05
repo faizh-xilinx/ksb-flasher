@@ -69,6 +69,14 @@
         </div>
 
         <div class="form-group">
+          <label for="lab-host-select">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M2 2a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V2zm2 1v2h1V3H4zm3 0v2h1V3H7zM2 9a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V9zm2 1v2h1v-2H4zm3 0v2h1v-2H7z"/></svg>
+            Lab Host
+          </label>
+          <select id="lab-host-select"><option value="">-- Manual Entry --</option></select>
+        </div>
+
+        <div class="form-group">
           <label for="jump-input">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M1 5a2 2 0 0 1 2-2h3.586a1 1 0 0 1 .707.293l1.414 1.414A1 1 0 0 0 9.414 5H13a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V5z"/></svg>
             Jump Host
@@ -82,6 +90,14 @@
             Target Host
           </label>
           <input type="text" id="host-input" placeholder="e.g. ndr730j.xndlab.xilinx.com" autocomplete="off" spellcheck="false" />
+        </div>
+
+        <div class="form-group">
+          <label for="host-ip-input">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0a8 8 0 1 0 0 16A8 8 0 0 0 8 0zm0 14.5a6.5 6.5 0 1 1 0-13 6.5 6.5 0 0 1 0 13zM7 4h2v5H7zm0 6h2v2H7z"/></svg>
+            Host IP <span class="optional">(machine controlled by iDRAC, for readiness check)</span>
+          </label>
+          <input type="text" id="host-ip-input" placeholder="e.g. ndr7515b.xndlab.xilinx.com" autocomplete="off" spellcheck="false" />
         </div>
 
         <div class="form-row">
