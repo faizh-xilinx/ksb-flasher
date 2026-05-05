@@ -371,23 +371,33 @@
     try {
       state.labHosts = await (await fetch("/api/lab-hosts")).json();
     } catch { state.labHosts = []; }
-    $labHostSelect.innerHTML = '<option value="">-- Manual Entry --</option>';
+    $labHostSelect.innerHTML = '<option value="">-- Select a host --</option>';
     state.labHosts.forEach((h, i) => {
       const opt = document.createElement("option");
       opt.value = i;
-      opt.textContent = `${h.host_name} → ${h.partner_machine}`;
+      opt.textContent = `${h.host_name} \u2192 ${h.partner_machine}`;
       $labHostSelect.appendChild(opt);
     });
   }
 
   function applyLabHost() {
     const idx = $labHostSelect.value;
-    if (idx === "") return;
+    const infoPanel = $("selected-host-info");
+    if (idx === "") {
+      infoPanel.style.display = "none";
+      $hostInput.value = ""; $hostIpInput.value = ""; $idracHost.value = "";
+      return;
+    }
     const h = state.labHosts[parseInt(idx)];
     if (!h) return;
     $hostInput.value = h.partner_machine || "";
     $hostIpInput.value = h.host_name || "";
     $idracHost.value = h.host_idrac_ip || "";
+
+    $("info-host-name").textContent = `Host: ${h.host_name} (iDRAC: ${h.host_idrac_ip})`;
+    $("info-partner").textContent = `Partner: ${h.partner_machine}`;
+    $("info-idrac").textContent = `Card Power: port ${h.card_power_port}`;
+    infoPanel.style.display = "block";
   }
 
   // -- Defaults & History ----------------------------------------------
@@ -466,7 +476,7 @@
 
   async function handleConnect() {
     const host = $hostInput.value.trim();
-    if (!host) { $hostInput.focus(); return; }
+    if (!host) { showError("Please select a lab host from the dropdown"); $labHostSelect.focus(); return; }
 
     const jumpHost = $jumpInput.value.trim() || undefined;
     const jumpUser = $jumpUserInput.value.trim() || undefined;

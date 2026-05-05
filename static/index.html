@@ -73,8 +73,21 @@
             <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M2 2a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V2zm2 1v2h1V3H4zm3 0v2h1V3H7zM2 9a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V9zm2 1v2h1v-2H4zm3 0v2h1v-2H7z"/></svg>
             Lab Host
           </label>
-          <select id="lab-host-select"><option value="">-- Manual Entry --</option></select>
+          <select id="lab-host-select"><option value="">-- Select a host --</option></select>
         </div>
+
+        <div class="form-group" id="selected-host-info" style="display:none">
+          <div style="font-family:var(--font-mono);font-size:11px;color:var(--text-muted);padding:8px 12px;background:var(--bg-input);border-radius:var(--radius-sm);line-height:1.8">
+            <span id="info-host-name"></span><br/>
+            <span id="info-partner"></span><br/>
+            <span id="info-idrac"></span>
+          </div>
+        </div>
+
+        <!-- Hidden inputs populated from CSV -->
+        <input type="hidden" id="host-input" />
+        <input type="hidden" id="host-ip-input" />
+        <input type="hidden" id="idrac-host-input" />
 
         <div class="form-group">
           <label for="jump-input">
@@ -84,53 +97,15 @@
           <input type="text" id="jump-input" placeholder="e.g. xndengvm004116" autocomplete="off" spellcheck="false" />
         </div>
 
-        <div class="form-group">
-          <label for="host-input">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M2 3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3zm1 0v4h10V3H3zm-1 7a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-3zm1 0v3h10v-3H3zm2 1.5a.5.5 0 1 1 1 0 .5.5 0 0 1-1 0zm0-7a.5.5 0 1 1 1 0 .5.5 0 0 1-1 0z"/></svg>
-            Target Host
-          </label>
-          <input type="text" id="host-input" placeholder="e.g. ndr730j.xndlab.xilinx.com" autocomplete="off" spellcheck="false" />
-        </div>
-
-        <div class="form-group">
-          <label for="host-ip-input">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0a8 8 0 1 0 0 16A8 8 0 0 0 8 0zm0 14.5a6.5 6.5 0 1 1 0-13 6.5 6.5 0 0 1 0 13zM7 4h2v5H7zm0 6h2v2H7z"/></svg>
-            Host IP <span class="optional">(machine controlled by iDRAC, for readiness check)</span>
-          </label>
-          <input type="text" id="host-ip-input" placeholder="e.g. ndr7515b.xndlab.xilinx.com" autocomplete="off" spellcheck="false" />
-        </div>
-
         <div class="form-row">
           <div class="form-group">
-            <label for="jump-user-input">
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm0 1c-3.315 0-6 1.79-6 4v1h12v-1c0-2.21-2.685-4-6-4z"/></svg>
-              Jump User
-            </label>
+            <label for="jump-user-input">Jump User</label>
             <input type="text" id="jump-user-input" placeholder="e.g. faizh" autocomplete="off" spellcheck="false" />
           </div>
           <div class="form-group">
-            <label for="target-user-input">
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm0 1c-3.315 0-6 1.79-6 4v1h12v-1c0-2.21-2.685-4-6-4z"/></svg>
-              Target User
-            </label>
+            <label for="target-user-input">Target User</label>
             <input type="text" id="target-user-input" placeholder="e.g. root" autocomplete="off" spellcheck="false" />
           </div>
-        </div>
-
-        <div class="form-group">
-          <label for="pass-input">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M5.5 5a2.5 2.5 0 0 1 5 0v1H12a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h1.5V5zM7 5v1h2V5a1 1 0 1 0-2 0zm1 5.5a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></svg>
-            Password <span class="optional">(optional - SSH key auth by default)</span>
-          </label>
-          <input type="password" id="pass-input" placeholder="SSH key auth by default" autocomplete="off" />
-        </div>
-
-        <div class="form-group">
-          <label for="idrac-host-input">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M2 2a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V2zm2 1v2h1V3H4zm3 0v2h1V3H7zM2 9a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V9zm2 1v2h1v-2H4zm3 0v2h1v-2H7z"/></svg>
-            iDRAC Host <span class="optional">(optional - for power control)</span>
-          </label>
-          <input type="text" id="idrac-host-input" placeholder="e.g. idrac-ndr730j or 10.x.x.x" autocomplete="off" spellcheck="false" />
         </div>
 
         <div class="form-row">
@@ -142,6 +117,13 @@
             <label for="idrac-pass-input">iDRAC Password</label>
             <input type="password" id="idrac-pass-input" placeholder="e.g. calvin" autocomplete="off" />
           </div>
+        </div>
+
+        <div class="form-group">
+          <label for="pass-input">
+            SSH Password <span class="optional">(optional - SSH key auth by default)</span>
+          </label>
+          <input type="password" id="pass-input" placeholder="SSH key auth by default" autocomplete="off" />
         </div>
 
         <button class="cmd-toggle" id="cmd-toggle" type="button">
