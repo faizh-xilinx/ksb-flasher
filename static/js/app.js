@@ -266,6 +266,7 @@
     // Card Power
     $("card-power-btn").addEventListener("click", () => {
       if (state.cardPowerUrl) {
+        alert(`Use PORT ${state.cardPowerPort} on the power server`);
         window.open(state.cardPowerUrl, "_blank");
         $statusBar.textContent = `Card Power: use port ${state.cardPowerPort}`;
       } else {
@@ -545,6 +546,7 @@
     $toolbarHost.textContent = `${targetUser ? targetUser + "@" : ""}${host}${via}${hostLabel}${idracLabel}`;
 
     buildMacroBar();
+    if (state.cardPowerPort) $("card-power-btn").textContent = `Card Pwr:${state.cardPowerPort}`;
     await createAllTerminals();
     connectAllTerminals();
     state.connected = true;
