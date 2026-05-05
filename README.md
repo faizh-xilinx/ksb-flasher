@@ -4,12 +4,13 @@ A web-based multi-terminal application for programming firmware images on AMD Sm
 
 ## Quick Start (No Installation)
 
-1. Download **[KSB_Flasher.zip](https://github.com/faizh-xilinx/ksb-flasher/releases/latest/download/KSB_Flasher.zip)** (~13 MB)
-2. Extract the zip
-3. Double-click `KSB_Flasher.exe`
-4. A browser window opens with the KSB Flasher UI
+```
+git clone https://github.com/faizh-xilinx/ksb-flasher.git
+```
 
-That's it. No Python, no dependencies, no admin rights, no installation. Just extract and run.
+Then run `release\KSB_Flasher.exe` -- that's it. No Python, no build, no admin rights.
+
+The pre-built `.exe` is included in the `release/` folder of the repo. Just clone and double-click.
 
 ### Build from Source (for developers)
 
