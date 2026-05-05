@@ -2,25 +2,21 @@
 
 A web-based multi-terminal application for programming firmware images on AMD SmartNIC cards. Manages SSH sessions, iDRAC power control, and host operations -- all in a single window.
 
-## One-Click Install (Windows)
+## Quick Start (No Installation)
+
+1. Download **[KSB_Flasher.exe](https://github.com/faizh-xilinx/ksb-flasher/releases/latest/download/KSB_Flasher.exe)** (13.5 MB)
+2. Double-click to run
+3. A browser window opens with the KSB Flasher UI
+
+That's it. No Python, no dependencies, no admin rights, no installation. Just download and run.
+
+### Build from Source (for developers)
 
 ```
 git clone https://github.com/faizh-xilinx/ksb-flasher.git
 cd ksb-flasher
-install.bat
-```
-
-No admin rights, no Python install, no dependencies needed. The installer:
-1. Downloads a portable Python (embeddable, no system install)
-2. Installs all dependencies (aiohttp, asyncssh, pyinstaller)
-3. Builds a standalone `KSB_Flasher.exe` (~13.5 MB)
-4. Creates a desktop shortcut
-
-### Updating
-
-```
-git pull
-install.bat            # quick update (~35s, reuses existing Python)
+install.bat            # first time: downloads Python + deps + builds .exe
+install.bat            # subsequent: quick update (~35s)
 install.bat --fresh    # full reinstall from scratch
 ```
 
