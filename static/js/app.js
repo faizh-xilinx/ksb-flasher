@@ -259,6 +259,16 @@
     });
     initFloatingWindow();
 
+    // Card Power
+    $("card-power-btn").addEventListener("click", () => {
+      if (state.cardPowerUrl) {
+        window.open(state.cardPowerUrl, "_blank");
+        $statusBar.textContent = `Card Power: use port ${state.cardPowerPort}`;
+      } else {
+        alert("No card power server configured for this host");
+      }
+    });
+
     // Open iDRAC KVM
     $openKvmBtn.addEventListener("click", () => {
       const ih = state.connParams && state.connParams.idracHost;
@@ -399,6 +409,8 @@
     $hostInput.value = h.partner_machine || "";
     $hostIpInput.value = h.host_name || "";
     $idracHost.value = h.host_idrac_ip || "";
+    state.cardPowerUrl = h.card_power_server || "";
+    state.cardPowerPort = h.card_power_port || "";
 
     $("info-host-name").textContent = `Host: ${h.host_name} (iDRAC: ${h.host_idrac_ip})`;
     $("info-partner").textContent = `Partner: ${h.partner_machine}`;
@@ -512,7 +524,7 @@
     const idracPass = $idracPass.value;
     const hostIp = $hostIpInput.value.trim();
 
-    state.connParams = { host, jumpHost, jumpUser, targetUser, password, commands, idracHost, idracUser, idracPass, hostIp };
+    state.connParams = { host, jumpHost, jumpUser, targetUser, password, commands, idracHost, idracUser, idracPass, hostIp, cardPowerUrl: state.cardPowerUrl, cardPowerPort: state.cardPowerPort };
 
     try {
       state.history = await (await fetch("/api/history", {
