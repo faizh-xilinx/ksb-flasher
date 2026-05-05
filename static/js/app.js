@@ -252,6 +252,12 @@
       document.querySelectorAll(".hostssh-element").forEach(el => el.classList.toggle("hidden", !on));
       fitAllTerminals();
     });
+    $("hostssh-close").addEventListener("click", () => {
+      $hostsshCheckbox.checked = false;
+      $hostsshToggle.classList.remove("active");
+      document.querySelectorAll(".hostssh-element").forEach(el => el.classList.add("hidden"));
+    });
+    initFloatingWindow();
 
     // Open iDRAC KVM
     $openKvmBtn.addEventListener("click", () => {
@@ -667,6 +673,60 @@
         } catch {}
       }
     }
+  }
+
+  // -- Floating Host SSH window ----------------------------------------
+
+  function initFloatingWindow() {
+    const win = $("hostssh-float");
+    const titlebar = $("hostssh-titlebar");
+    const resizeHandle = $("hostssh-resize");
+
+    // Drag
+    let dragging = false, dx = 0, dy = 0;
+    titlebar.addEventListener("mousedown", (e) => {
+      if (e.target.closest(".pane-btn")) return;
+      dragging = true;
+      dx = e.clientX - win.offsetLeft;
+      dy = e.clientY - win.offsetTop;
+      document.body.style.userSelect = "none";
+    });
+    document.addEventListener("mousemove", (e) => {
+      if (dragging) {
+        win.style.left = Math.max(0, e.clientX - dx) + "px";
+        win.style.top = Math.max(0, e.clientY - dy) + "px";
+        win.style.right = "auto";
+        win.style.bottom = "auto";
+      }
+    });
+    document.addEventListener("mouseup", () => {
+      if (dragging) { dragging = false; document.body.style.userSelect = ""; }
+    });
+
+    // Resize
+    let resizing = false, rw = 0, rh = 0, rx = 0, ry = 0;
+    resizeHandle.addEventListener("mousedown", (e) => {
+      e.preventDefault(); resizing = true;
+      rw = win.offsetWidth; rh = win.offsetHeight;
+      rx = e.clientX; ry = e.clientY;
+      document.body.style.userSelect = "none";
+      document.body.style.cursor = "nwse-resize";
+    });
+    document.addEventListener("mousemove", (e) => {
+      if (resizing) {
+        win.style.width = Math.max(300, rw + e.clientX - rx) + "px";
+        win.style.height = Math.max(150, rh + e.clientY - ry) + "px";
+        fitAllTerminals();
+      }
+    });
+    document.addEventListener("mouseup", () => {
+      if (resizing) {
+        resizing = false;
+        document.body.style.userSelect = "";
+        document.body.style.cursor = "";
+        fitAllTerminals();
+      }
+    });
   }
 
   // -- Resizable grid dividers -----------------------------------------

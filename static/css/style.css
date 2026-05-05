@@ -1096,20 +1096,60 @@ html.light select#profile-select option { background: #fff; color: #1e293b; }
   color: var(--accent);
 }
 
-/* ── Host SSH bottom row ────────────────────────────────────────────── */
+/* ── Host SSH floating window ───────────────────────────────────────── */
 
-.hostssh-row {
+.hostssh-float {
+  position: absolute;
+  bottom: 40px;
+  right: 20px;
+  width: 600px;
+  height: 350px;
+  min-width: 300px;
+  min-height: 150px;
+  z-index: 20;
   display: flex;
   flex-direction: column;
-  flex: 0 0 30%;
-  min-height: 80px;
-  border-top: 1px solid var(--border);
+  background: var(--bg-primary);
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  box-shadow: 0 8px 32px -4px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(0, 212, 255, 0.15);
+  overflow: hidden;
 }
 
-.hostssh-row .terminal-pane {
-  flex: 1;
-  min-height: 0;
+.hostssh-titlebar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 28px;
+  padding: 0 10px;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+  cursor: move;
+  flex-shrink: 0;
+  user-select: none;
 }
+
+.hostssh-title {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.hostssh-resize-handle {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 16px;
+  height: 16px;
+  cursor: nwse-resize;
+  background: linear-gradient(135deg, transparent 50%, var(--text-dim) 50%, transparent 55%, var(--text-dim) 70%, transparent 75%);
+  opacity: 0.4;
+}
+
+.hostssh-resize-handle:hover { opacity: 0.8; }
 
 /* ── Utilities ──────────────────────────────────────────────────────── */
 

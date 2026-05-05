@@ -381,19 +381,21 @@
       </div>
     </div>
 
-    <!-- Host SSH pane (bottom, togglable) -->
-    <div class="hostssh-row hostssh-element hidden" id="hostssh-row">
-      <div class="terminal-pane" id="pane-hostssh">
-        <div class="pane-header">
-          <span class="status-dot" id="status-hostssh"></span>
-          <span class="pane-title">Host SSH</span>
-          <span class="pane-spacer"></span>
-          <button class="pane-btn" id="reconnect-hostssh" title="Reconnect this pane">
-            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 4v4h4M15 12V8h-4"/><path d="M2.5 10.5a6 6 0 0 0 10.2 1.8M13.5 5.5a6 6 0 0 0-10.2-1.8"/></svg>
-          </button>
-        </div>
-        <div class="pane-body" id="term-hostssh"></div>
+    <!-- Host SSH floating window -->
+    <div class="hostssh-float hostssh-element hidden" id="hostssh-float">
+      <div class="hostssh-titlebar" id="hostssh-titlebar">
+        <span class="status-dot" id="status-hostssh"></span>
+        <span class="hostssh-title">Host SSH</span>
+        <span class="pane-spacer"></span>
+        <button class="pane-btn" id="reconnect-hostssh" title="Reconnect" style="opacity:0.7">
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 4v4h4M15 12V8h-4"/><path d="M2.5 10.5a6 6 0 0 0 10.2 1.8M13.5 5.5a6 6 0 0 0-10.2-1.8"/></svg>
+        </button>
+        <button class="pane-btn" id="hostssh-close" title="Close" style="opacity:0.7">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="3" x2="9" y2="9"/><line x1="9" y1="3" x2="3" y2="9"/></svg>
+        </button>
       </div>
+      <div class="pane-body" id="term-hostssh" style="flex:1;min-height:0"></div>
+      <div class="hostssh-resize-handle" id="hostssh-resize"></div>
     </div>
 
     <!-- Status bar -->
