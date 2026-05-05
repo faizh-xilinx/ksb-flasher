@@ -36,8 +36,14 @@ def _data_dir():
 
 def _find_client_keys():
     ssh_dir = Path.home() / ".ssh"
-    candidates = ["id_rsa", "id_ed25519", "id_ecdsa"]
-    return [str(ssh_dir / k) for k in candidates if (ssh_dir / k).exists()]
+    keys = []
+    if ssh_dir.exists():
+        for f in ssh_dir.iterdir():
+            if f.is_file() and not f.suffix and f.name.startswith("id_"):
+                keys.append(str(f))
+            elif f.suffix == ".pem":
+                keys.append(str(f))
+    return keys
 
 
 STATIC_DIR = _base_dir() / "static"
@@ -148,7 +154,7 @@ def add_to_history(entry):
 # ---------------------------------------------------------------------------
 
 async def _connect_jump(jump_host, username=None, password=None):
-    kw = {"host": jump_host, "known_hosts": None}
+    kw = {"host": jump_host, "known_hosts": None, "agent_forwarding": True}
     client_keys = _find_client_keys()
     if client_keys:
         kw["client_keys"] = client_keys
@@ -156,7 +162,16 @@ async def _connect_jump(jump_host, username=None, password=None):
         kw["username"] = username
     if password:
         kw["password"] = password
-    return await asyncssh.connect(**kw)
+    try:
+        return await asyncssh.connect(**kw)
+    except asyncssh.PermissionDenied:
+        # Retry without explicit keys (let asyncssh try agent + defaults)
+        kw2 = {"host": jump_host, "known_hosts": None, "agent_forwarding": True}
+        if username:
+            kw2["username"] = username
+        if password:
+            kw2["password"] = password
+        return await asyncssh.connect(**kw2)
 
 
 # ---------------------------------------------------------------------------
