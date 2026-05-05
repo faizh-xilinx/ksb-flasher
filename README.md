@@ -1,6 +1,28 @@
 # KSB Flasher
 
-A web-based multi-terminal application for programming firmware images on AMD SmartNIC cards. Opens four SSH sessions to a remote lab machine through a jump host, with integrated iDRAC power control -- all in a single window.
+A web-based multi-terminal application for programming firmware images on AMD SmartNIC cards. Manages SSH sessions, iDRAC power control, and host operations -- all in a single window.
+
+## One-Click Install (Windows)
+
+```
+git clone https://github.com/faizh-xilinx/ksb-flasher.git
+cd ksb-flasher
+install.bat
+```
+
+No admin rights, no Python install, no dependencies needed. The installer:
+1. Downloads a portable Python (embeddable, no system install)
+2. Installs all dependencies (aiohttp, asyncssh, pyinstaller)
+3. Builds a standalone `KSB_Flasher.exe` (~13.5 MB)
+4. Creates a desktop shortcut
+
+### Updating
+
+```
+git pull
+install.bat            # quick update (~35s, reuses existing Python)
+install.bat --fresh    # full reinstall from scratch
+```
 
 ## Layout
 
@@ -14,7 +36,7 @@ A web-based multi-terminal application for programming firmware images on AMD Sm
 +------------------+---------------------+
 ```
 
-**XSDB enabled (4-quad):**
+**XSDB enabled (4-quad, togglable):**
 ```
 +------------------+---------------------+
 |  SEC Minicom     |  NMC Minicom        |
@@ -23,71 +45,69 @@ A web-based multi-terminal application for programming firmware images on AMD Sm
 +------------------+---------------------+
 ```
 
-## One-Click Install (Windows)
-
-```
-git clone https://github.com/faizh-xilinx/ksb-flasher.git
-cd ksb-flasher
-install.bat
-```
-
-The installer downloads a portable Python, installs dependencies, builds a standalone `KSB_Flasher.exe` (~13.5 MB), and creates a desktop shortcut. No admin rights needed.
-
-### Updating
-
-Run `install.bat` again after pulling new changes. It auto-detects the existing installation and does a fast update (~35s) -- only copies new files and rebuilds the .exe, skipping Python/deps.
-
-```
-git pull
-install.bat            # quick update (~35s)
-install.bat --fresh    # full reinstall if needed
-```
+**Host SSH (floating window, togglable):**
+Draggable, resizable window for direct SSH to the host machine.
 
 ## Features
 
-### Connection
-- **Jump host support** -- SSH through a gateway to reach lab machines on internal networks
-- **Separate user logins** -- different users for jump host (e.g. `faizh`) and target (e.g. `root`)
-- **Connection history** -- remembers hosts, users, commands, and iDRAC credentials per connection
-- **Connection profiles** -- save/load named profiles (e.g. "NDR730J B0 PDI") from a dropdown
-- **Export/Import config** -- share a `.json` config file with teammates for identical setup
+### Lab Host Database
+- **CSV-based host database** (`ksb_hosts.csv`) -- all lab hosts pre-configured
+- **Dropdown selector** -- select a host from the list, all fields auto-fill
+- **No manual entry** -- host, partner, iDRAC IP all come from the CSV
+- Only user-specific fields (jump host, username, passwords) need to be entered once
 
-### Terminals
-- **4 terminal sessions** -- SEC Minicom, NMC Minicom, APU UART, and XSDB (togglable)
-- **XSDB toggle** -- switch between 3-pane (SEC/NMC + APU) and 4-quad layout via toolbar button
-- **Live terminals** -- full interactive PTY via xterm.js (colors, special keys, 10K line scrollback)
-- **Resizable panes** -- drag dividers between panes to resize
-- **Terminal search** -- Ctrl+F to search scrollback, Enter/Shift+Enter for next/prev match
-- **Font zoom** -- Ctrl+/- or toolbar buttons (8-24px range), Ctrl+0 to reset
-- **Dark/Light theme** -- toggle in toolbar, preference persists across sessions
-- **Reconnect per-pane** -- reconnect a single dropped session without affecting others
-- **AMD logo watermark** -- faded AMD branding in each terminal pane background
+### Connection
+- **Jump host support** -- SSH through a gateway to reach lab machines
+- **Separate user logins** -- different users for jump host and target
+- **Connection history** -- remembers all settings per connection
+- **Connection profiles** -- save/load named profiles from a dropdown
+- **Export/Import config** -- share JSON config files with teammates
+
+### Terminal Sessions
+- **5 terminal sessions** -- SEC Minicom, NMC Minicom, APU UART, XSDB (togglable), Host SSH (floating)
+- **XSDB toggle** -- switch between 3-pane and 4-quad layout
+- **Host SSH** -- floating, draggable, resizable window for host operations
+- **Live terminals** -- full interactive PTY via xterm.js (colors, special keys, 10K scrollback)
+- **Resizable panes** -- drag dividers between panes
+- **Terminal search** -- Ctrl+F to search scrollback
+- **Font zoom** -- Ctrl+/- (8-24px range), Ctrl+0 to reset
+- **Dark/Light theme** -- toggle in toolbar, persists across sessions
+- **Reconnect per-pane** -- reconnect individual dropped sessions
+- **AMD logo watermark** -- faded AMD branding in each terminal pane
 
 ### iDRAC Power Control
-- **Power On / Power Off** -- control host power directly via iDRAC Redfish REST API
-- **Power status indicator** -- real-time green/red dot showing host power state (polls every 15s)
-- **SSH readiness indicator** -- green when target host SSH port is reachable, red during boot
-- **SSH-ready notification** -- desktop notification when host becomes SSH-reachable after power on
-- **iDRAC hostname display** -- shows system hostname from iDRAC alongside IP in toolbar
-- **Credential persistence** -- iDRAC host, username, and password saved with connection history
-- **Power macro buttons** -- Power Off (red) and Power On (green) in the macro bar
+- **Power On / Power Off** -- via iDRAC Redfish REST API
+- **Power status indicator** -- real-time green/red dot (polls every 15s)
+- **Host readiness indicator** -- pings host IP to detect when it's up after power cycle
+- **Boot notification** -- desktop alert when host responds to ping after power on
+- **iDRAC hostname display** -- shows system hostname from Redfish in toolbar
+- **KVM button** -- opens iDRAC web UI for virtual console
+- **Card Power button** -- opens card power server URL, shows port number
+- **Credential persistence** -- iDRAC credentials saved (base64 obfuscated)
 
 ### Automation
-- **Macro buttons** -- one-click command buttons grouped by pane in a toolbar bar
-- **Dynamic PMC target** -- macros auto-select the PMC target via `targets -set -filter {name =~ "*PMC*"}` instead of hardcoded target numbers
-- **Broadcast input** -- BCAST toggle sends keystrokes to all panes simultaneously
-- **Watch patterns** -- comma-separated strings (e.g. `DONE, ERROR`); triggers desktop notification on match
-- **Editable commands** -- modify startup commands for each terminal before connecting
+- **Macro buttons** -- one-click command buttons grouped by pane
+- **Dynamic PMC target** -- auto-selects PMC via `targets -set -filter {name =~ "*PMC*"}`
+- **JTAG auto-detect** -- Auto-Detect button parses `targets` output
+- **Broadcast input** -- BCAST toggle sends keystrokes to all panes
+- **Watch patterns** -- desktop notification on pattern match (e.g. DONE, ERROR)
+- **Flash progress** -- status bar shows percentage from XSDB output
+- **Editable commands** -- modify startup commands before connecting
 
 ### Operations
-- **Session logging** -- auto-saves terminal output to timestamped log files in `logs/`
-- **File upload** -- drag-and-drop SCP upload to the target machine through the jump host
+- **Session logging** -- auto-saves to timestamped log files with periodic timestamps
+- **Log pruning** -- auto-deletes oldest logs when total exceeds 2MB (FIFO)
+- **Log viewer** -- browse and read saved logs from the UI
+- **File upload** -- drag-and-drop SCP to target machine
+- **System info** -- query iDRAC for BIOS version, model, serial number
+- **Tab close protection** -- confirmation dialog prevents accidental session loss
 
 ## Default XSDB Macros
 
 | Button | Command |
 |---|---|
 | Targets | `targets` |
+| Auto-Detect | Enumerates JTAG targets, shows in status bar |
 | Reset System | `targets -set -filter {name =~ "*PMC*"}; rst -system; source run.tcl` |
 | Program PDI | `targets -set -filter {name =~ "*PMC*"}; source run.tcl` |
 | Load All FW | `ta 7; dow -f cmc_fw.elf; con; ta 4; dow -f nmc_fw.elf; con; ta 5; dow -f sec_fw.elf; con` |
@@ -95,23 +115,45 @@ install.bat --fresh    # full reinstall if needed
 | Load NMC | `ta 4; dow -f nmc_fw.elf; con` |
 | Load SEC | `ta 5; dow -f sec_fw.elf; con` |
 | Full Flash | Reset + Program PDI + Load All FW in sequence |
+| Power Off | iDRAC ForceOff (in POWER group) |
+| Power On | iDRAC On (in POWER group) |
 
 ## Complete Firmware Programming Workflow
 
 ```
-1. Launch KSB_Flasher.exe
-2. Enter connection details (or click a saved history/profile)
-   - Jump host, target host, users
-   - iDRAC host, user, password
-3. Click Connect
-4. Click "Power Off" (macro bar or toolbar) -- host powers down
-5. Wait for power indicator to show OFF
-6. Click "XSDB" toggle to show XSDB pane
-7. Click "Program PDI" or "Full Flash" macro
-8. Click "Power On" -- host boots
-9. Watch SSH indicator go green + desktop notification
+1. Launch KSB_Flasher.exe (or double-click desktop shortcut)
+2. Select lab host from dropdown (auto-fills everything)
+3. Enter jump host, username, iDRAC credentials
+4. Click Connect
+5. Click "Power Off" to power down the host
+6. Wait for HOST indicator to go red
+7. Toggle XSDB on, click "Full Flash" or individual macros
+8. Click "Power On" to boot
+9. Watch HOST indicator go green + desktop notification
 10. Monitor boot on SEC/NMC/APU UART panes
+11. Toggle HOST SSH for host operations
+12. Use Card Pwr button for SmartNIC card power management
 ```
+
+## Lab Host Database
+
+Edit `ksb_hosts.csv` to add/modify lab hosts:
+
+```csv
+s_no,host_name,host_idrac_ip,partner_machine,partner_machine_idrac_ip,card_power_server,card_power_port
+1,ndr7515b.xndlab.xilinx.com,10.170.92.61,ndr730j.xndlab.xilinx.com,10.170.92.25,http://10.170.92.65/...,1
+```
+
+| Column | Description |
+|---|---|
+| host_name | The machine controlled by iDRAC (has the SmartNIC card) |
+| host_idrac_ip | iDRAC IP for power control and system info |
+| partner_machine | The machine you SSH to for minicom/xsdb |
+| partner_machine_idrac_ip | Partner's iDRAC (informational) |
+| card_power_server | URL for the NMC/APC power outlet controller |
+| card_power_port | Which outlet port controls the SmartNIC card |
+
+After editing the CSV, run `install.bat` to rebuild the `.exe` with the updated hosts.
 
 ## Keyboard Shortcuts
 
@@ -121,11 +163,28 @@ install.bat --fresh    # full reinstall if needed
 | Ctrl++ / Ctrl+- | Increase/decrease font size |
 | Ctrl+0 | Reset font size to default |
 | Enter (in search) | Next match |
-| Shift+Enter (in search) | Previous match |
+| Shift+Enter | Previous match |
 | Esc | Close search bar |
 
 ## Requirements
 
-- Windows 10/11
+- Windows 10/11 (64-bit)
 - SSH key access to the jump host (`~/.ssh/id_rsa`)
 - Network access to the jump host and iDRAC
+- Internet access (first install only, for downloading Python + deps)
+
+## Project Structure
+
+```
+ksb-flasher/
+  app.py              # Python backend (aiohttp + asyncssh + Redfish)
+  install.bat          # Windows installer/updater
+  ksb_flasher.spec     # PyInstaller build spec
+  ksb_hosts.csv        # Lab host database
+  requirements.txt     # Python dependencies
+  static/
+    index.html         # Main UI
+    css/style.css       # Styles (dark/light theme)
+    js/app.js           # Frontend logic
+    amd-logo.png        # AMD watermark
+```
