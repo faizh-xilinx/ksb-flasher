@@ -482,7 +482,8 @@
     const jumpUser = $jumpUserInput.value.trim() || undefined;
     const targetUser = $targetUserInput.value.trim() || undefined;
     const password = $passInput.value || undefined;
-    const hostsshCmds = hostIp ? [`ssh -o StrictHostKeyChecking=no root@${hostIp}`] : [];
+    const hostIpVal = $hostIpInput.value.trim();
+    const hostsshCmds = hostIpVal ? [`ssh -o StrictHostKeyChecking=no root@${hostIpVal}`] : [];
     const commands = { sec: parseCommands($cmdSec.value), nmc: parseCommands($cmdNmc.value), apu: parseCommands($cmdApu.value), xsdb: parseCommands($cmdXsdb.value), hostssh: hostsshCmds };
 
     state.watchPatterns = $watchPatterns.value.split(",").map(s => s.trim()).filter(Boolean);
