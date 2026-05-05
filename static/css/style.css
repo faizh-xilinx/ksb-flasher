@@ -702,24 +702,6 @@ html, body {
 .terminal-grid #div-v      { grid-area: 1 / 2 / 4 / 3; }
 .terminal-grid #pane-apu   { grid-area: 1 / 3 / 4 / 4; }
 
-/* XSDB on: 4 equal quarters */
-.terminal-grid.quad-mode {
-  grid-template-columns: 1fr 5px 1fr;
-  grid-template-rows: 1fr 5px 1fr;
-}
-
-.terminal-grid.quad-mode #pane-sec   { grid-area: 1 / 1 / 2 / 2; }
-.terminal-grid.quad-mode #pane-nmc   { grid-area: 1 / 3 / 2 / 4; }
-.terminal-grid.quad-mode #div-h1     { grid-area: 2 / 1 / 3 / 2; }
-.terminal-grid.quad-mode #div-v      { grid-area: 1 / 2 / 4 / 3; }
-.terminal-grid.quad-mode #pane-apu   { grid-area: 3 / 1 / 4 / 2; }
-.terminal-grid.quad-mode #div-h2     { grid-area: 2 / 3 / 3 / 4; }
-.terminal-grid.quad-mode #pane-xsdb  { grid-area: 3 / 3 / 4 / 4; }
-
-/* Hide unused dividers per mode */
-.terminal-grid #div-h2 { display: none; }
-.terminal-grid.quad-mode #div-h1,
-.terminal-grid.quad-mode #div-h2 { display: block; }
 
 .terminal-pane {
   display: flex;
@@ -1096,14 +1078,10 @@ html.light select#profile-select option { background: #fff; color: #1e293b; }
   color: var(--accent);
 }
 
-/* ── Host SSH floating window ───────────────────────────────────────── */
+/* ── Floating terminal windows ──────────────────────────────────────── */
 
-.hostssh-float {
+.float-window {
   position: absolute;
-  bottom: 40px;
-  right: 20px;
-  width: 600px;
-  height: 350px;
   min-width: 300px;
   min-height: 150px;
   z-index: 20;
@@ -1116,7 +1094,7 @@ html.light select#profile-select option { background: #fff; color: #1e293b; }
   overflow: hidden;
 }
 
-.hostssh-titlebar {
+.float-titlebar {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -1129,7 +1107,7 @@ html.light select#profile-select option { background: #fff; color: #1e293b; }
   user-select: none;
 }
 
-.hostssh-title {
+.float-title {
   font-family: var(--font-mono);
   font-size: 11px;
   font-weight: 600;
@@ -1138,7 +1116,7 @@ html.light select#profile-select option { background: #fff; color: #1e293b; }
   letter-spacing: 0.5px;
 }
 
-.hostssh-resize-handle {
+.float-resize-handle {
   position: absolute;
   bottom: 0;
   right: 0;
@@ -1149,7 +1127,7 @@ html.light select#profile-select option { background: #fff; color: #1e293b; }
   opacity: 0.4;
 }
 
-.hostssh-resize-handle:hover { opacity: 0.8; }
+.float-resize-handle:hover { opacity: 0.8; }
 
 /* ── Utilities ──────────────────────────────────────────────────────── */
 

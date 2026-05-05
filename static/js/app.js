@@ -236,13 +236,17 @@
       if ((e.ctrlKey || e.metaKey) && e.key === "0") { e.preventDefault(); changeFontSize(0); }
     });
 
-    // XSDB pane toggle (switches between 3-pane and 4-quad layout)
+    // XSDB floating window toggle
     $xsdbCheckbox.addEventListener("change", () => {
       const on = $xsdbCheckbox.checked;
       $xsdbToggle.classList.toggle("active", on);
-      $terminalGrid.classList.toggle("quad-mode", on);
       document.querySelectorAll(".xsdb-element").forEach(el => el.classList.toggle("hidden", !on));
       fitAllTerminals();
+    });
+    $("xsdb-close").addEventListener("click", () => {
+      $xsdbCheckbox.checked = false;
+      $xsdbToggle.classList.remove("active");
+      document.querySelectorAll(".xsdb-element").forEach(el => el.classList.add("hidden"));
     });
 
     // Host SSH toggle
@@ -690,11 +694,16 @@
   // -- Floating Host SSH window ----------------------------------------
 
   function initFloatingWindow() {
-    const win = $("hostssh-float");
-    const titlebar = $("hostssh-titlebar");
-    const resizeHandle = $("hostssh-resize");
+    setupFloat("hostssh-float", "hostssh-titlebar", "hostssh-resize");
+    setupFloat("xsdb-float", "xsdb-titlebar", "xsdb-resize");
+  }
 
-    // Drag
+  function setupFloat(winId, titlebarId, resizeId) {
+    const win = $(winId);
+    const titlebar = $(titlebarId);
+    const resizeHandle = $(resizeId);
+    if (!win || !titlebar) return;
+
     let dragging = false, dx = 0, dy = 0;
     titlebar.addEventListener("mousedown", (e) => {
       if (e.target.closest(".pane-btn")) return;
@@ -702,6 +711,7 @@
       dx = e.clientX - win.offsetLeft;
       dy = e.clientY - win.offsetTop;
       document.body.style.userSelect = "none";
+      win.style.zIndex = "25";
     });
     document.addEventListener("mousemove", (e) => {
       if (dragging) {
@@ -715,7 +725,7 @@
       if (dragging) { dragging = false; document.body.style.userSelect = ""; }
     });
 
-    // Resize
+    if (!resizeHandle) return;
     let resizing = false, rw = 0, rh = 0, rx = 0, ry = 0;
     resizeHandle.addEventListener("mousedown", (e) => {
       e.preventDefault(); resizing = true;
@@ -739,6 +749,8 @@
         fitAllTerminals();
       }
     });
+
+    win.addEventListener("mousedown", () => { win.style.zIndex = "25"; });
   }
 
   // -- Resizable grid dividers -----------------------------------------
@@ -747,8 +759,6 @@
     const grid = $("terminal-grid");
     const divV  = $("div-v");
     const divH1 = $("div-h1");
-    const divH2 = $("div-h2");
-
     let colPct = 50, rowPct = 50;
 
     function applyGrid() {
@@ -785,7 +795,6 @@
 
     setupDrag(divV, "col");
     setupDrag(divH1, "row");
-    setupDrag(divH2, "row");
   }
 
   // -- Terminal creation -----------------------------------------------

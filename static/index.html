@@ -335,7 +335,6 @@
     <div class="terminal-grid" id="terminal-grid">
       <div class="grid-divider grid-divider-v" id="div-v"></div>
       <div class="grid-divider grid-divider-h" id="div-h1"></div>
-      <div class="grid-divider grid-divider-h xsdb-element hidden" id="div-h2"></div>
       <div class="terminal-pane" id="pane-sec">
         <div class="pane-header">
           <span class="status-dot" id="status-sec"></span>
@@ -372,24 +371,30 @@
         <div class="pane-body" id="term-apu"></div>
       </div>
 
-      <div class="terminal-pane xsdb-element hidden" id="pane-xsdb">
-        <div class="pane-header">
-          <span class="status-dot" id="status-xsdb"></span>
-          <span class="pane-title">XSDB Session</span>
-          <span class="pane-spacer"></span>
-          <button class="pane-btn" id="reconnect-xsdb" title="Reconnect this pane">
-            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 4v4h4M15 12V8h-4"/><path d="M2.5 10.5a6 6 0 0 0 10.2 1.8M13.5 5.5a6 6 0 0 0-10.2-1.8"/></svg>
-          </button>
-        </div>
-        <div class="pane-body" id="term-xsdb"></div>
+    </div>
+
+    <!-- XSDB floating window -->
+    <div class="float-window xsdb-element hidden" id="xsdb-float" style="bottom:40px;left:20px;width:700px;height:400px">
+      <div class="float-titlebar" id="xsdb-titlebar">
+        <span class="status-dot" id="status-xsdb"></span>
+        <span class="float-title">XSDB Session</span>
+        <span class="pane-spacer"></span>
+        <button class="pane-btn" id="reconnect-xsdb" title="Reconnect" style="opacity:0.7">
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 4v4h4M15 12V8h-4"/><path d="M2.5 10.5a6 6 0 0 0 10.2 1.8M13.5 5.5a6 6 0 0 0-10.2-1.8"/></svg>
+        </button>
+        <button class="pane-btn" id="xsdb-close" title="Close" style="opacity:0.7">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="3" x2="9" y2="9"/><line x1="9" y1="3" x2="3" y2="9"/></svg>
+        </button>
       </div>
+      <div class="pane-body" id="term-xsdb" style="flex:1;min-height:0"></div>
+      <div class="float-resize-handle" id="xsdb-resize"></div>
     </div>
 
     <!-- Host SSH floating window -->
-    <div class="hostssh-float hostssh-element hidden" id="hostssh-float">
-      <div class="hostssh-titlebar" id="hostssh-titlebar">
+    <div class="float-window hostssh-element hidden" id="hostssh-float" style="bottom:40px;right:20px;width:600px;height:350px">
+      <div class="float-titlebar" id="hostssh-titlebar">
         <span class="status-dot" id="status-hostssh"></span>
-        <span class="hostssh-title">Host SSH</span>
+        <span class="float-title">Host SSH</span>
         <span class="pane-spacer"></span>
         <button class="pane-btn" id="reconnect-hostssh" title="Reconnect" style="opacity:0.7">
           <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 4v4h4M15 12V8h-4"/><path d="M2.5 10.5a6 6 0 0 0 10.2 1.8M13.5 5.5a6 6 0 0 0-10.2-1.8"/></svg>
@@ -399,7 +404,7 @@
         </button>
       </div>
       <div class="pane-body" id="term-hostssh" style="flex:1;min-height:0"></div>
-      <div class="hostssh-resize-handle" id="hostssh-resize"></div>
+      <div class="float-resize-handle" id="hostssh-resize"></div>
     </div>
 
     <!-- Status bar -->

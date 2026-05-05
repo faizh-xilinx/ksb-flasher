@@ -26,7 +26,7 @@ install.bat --fresh    # full reinstall from scratch
 
 ## Layout
 
-**Default (3-pane):**
+**Main grid (always visible):**
 ```
 +------------------+---------------------+
 |  SEC Minicom     |                     |
@@ -36,17 +36,9 @@ install.bat --fresh    # full reinstall from scratch
 +------------------+---------------------+
 ```
 
-**XSDB enabled (4-quad, togglable):**
-```
-+------------------+---------------------+
-|  SEC Minicom     |  NMC Minicom        |
-+--  resizable  ---+--  resizable  ------+
-|  APU UART        |  XSDB Session       |
-+------------------+---------------------+
-```
-
-**Host SSH (floating window, togglable):**
-Draggable, resizable window for direct SSH to the host machine.
+**Floating windows (togglable, draggable, resizable):**
+- **XSDB** -- toggle in toolbar, floating window for XSDB/firmware operations
+- **Host SSH** -- toggle in toolbar, floating window for host machine SSH
 
 ## Features
 
@@ -65,7 +57,7 @@ Draggable, resizable window for direct SSH to the host machine.
 
 ### Terminal Sessions
 - **5 terminal sessions** -- SEC Minicom, NMC Minicom, APU UART, XSDB (togglable), Host SSH (floating)
-- **XSDB toggle** -- switch between 3-pane and 4-quad layout
+- **XSDB** -- floating, draggable, resizable window for firmware operations
 - **Host SSH** -- floating, draggable, resizable window for host operations
 - **Live terminals** -- full interactive PTY via xterm.js (colors, special keys, 10K scrollback)
 - **Resizable panes** -- drag dividers between panes
