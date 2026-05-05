@@ -82,12 +82,14 @@
   const $fwInfoOverlay = $("fw-info-overlay");
   const $fwInfoContent = $("fw-info-content");
   const $fwInfoClose   = $("fw-info-close");
-  const $openKvmBtn    = $("open-kvm-btn");
+  const $hostsshToggle   = $("hostssh-toggle");
+  const $hostsshCheckbox = $("hostssh-checkbox");
+  const $openKvmBtn      = $("open-kvm-btn");
 
   // -- State -----------------------------------------------------------
 
-  const TERMINAL_DEFS = ["sec", "nmc", "apu", "xsdb"];
-  const TERMINAL_LABELS = { sec: "SEC", nmc: "NMC", apu: "APU", xsdb: "XSDB" };
+  const TERMINAL_DEFS = ["sec", "nmc", "apu", "xsdb", "hostssh"];
+  const TERMINAL_LABELS = { sec: "SEC", nmc: "NMC", apu: "APU", xsdb: "XSDB", hostssh: "HOST" };
 
   const state = {
     connected: false,
@@ -240,6 +242,14 @@
       $xsdbToggle.classList.toggle("active", on);
       $terminalGrid.classList.toggle("quad-mode", on);
       document.querySelectorAll(".xsdb-element").forEach(el => el.classList.toggle("hidden", !on));
+      fitAllTerminals();
+    });
+
+    // Host SSH toggle
+    $hostsshCheckbox.addEventListener("change", () => {
+      const on = $hostsshCheckbox.checked;
+      $hostsshToggle.classList.toggle("active", on);
+      document.querySelectorAll(".hostssh-element").forEach(el => el.classList.toggle("hidden", !on));
       fitAllTerminals();
     });
 
@@ -462,7 +472,8 @@
     const jumpUser = $jumpUserInput.value.trim() || undefined;
     const targetUser = $targetUserInput.value.trim() || undefined;
     const password = $passInput.value || undefined;
-    const commands = { sec: parseCommands($cmdSec.value), nmc: parseCommands($cmdNmc.value), apu: parseCommands($cmdApu.value), xsdb: parseCommands($cmdXsdb.value) };
+    const hostsshCmds = hostIp ? [`ssh -o StrictHostKeyChecking=no root@${hostIp}`] : [];
+    const commands = { sec: parseCommands($cmdSec.value), nmc: parseCommands($cmdNmc.value), apu: parseCommands($cmdApu.value), xsdb: parseCommands($cmdXsdb.value), hostssh: hostsshCmds };
 
     state.watchPatterns = $watchPatterns.value.split(",").map(s => s.trim()).filter(Boolean);
 
@@ -730,6 +741,7 @@
     connectTerminal("nmc",  host, jumpUser, targetUser, password, jumpHost, commands.nmc);
     connectTerminal("apu",  host, jumpUser, targetUser, password, jumpHost, commands.apu);
     connectTerminal("xsdb", host, jumpUser, targetUser, password, jumpHost, commands.xsdb);
+    connectTerminal("hostssh", host, jumpUser, targetUser, password, jumpHost, commands.hostssh);
     updateStatusBar();
   }
 
@@ -751,7 +763,7 @@
       ws.send(JSON.stringify({
         type: "init", host, jumpUser, targetUser, password, jumpHost,
         commands, cols, rows, sessionName: name, enableLogging: $loggingCheckbox.checked,
-        stayOnJumpHost: name === "console",
+        stayOnJumpHost: name === "hostssh",
       }));
     };
 

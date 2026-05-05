@@ -230,6 +230,11 @@
           <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><rect x="2" y="3" width="12" height="10" rx="1"/><path d="M8 3v10M2 8h12"/></svg>
           XSDB
         </label>
+        <label class="toolbar-btn toolbar-toggle" id="hostssh-toggle" title="Show/hide Host SSH session">
+          <input type="checkbox" id="hostssh-checkbox" />
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><rect x="2" y="2" width="12" height="12" rx="1"/><path d="M5 6l2 2-2 2M9 10h3"/></svg>
+          HOST
+        </label>
         <button class="toolbar-btn" id="open-kvm-btn" title="Open iDRAC web console in browser">
           <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><rect x="1" y="2" width="14" height="9" rx="1"/><path d="M5 14h6M8 11v3"/></svg>
           KVM
@@ -391,6 +396,21 @@
           </button>
         </div>
         <div class="pane-body" id="term-xsdb"></div>
+      </div>
+    </div>
+
+    <!-- Host SSH pane (bottom, togglable) -->
+    <div class="hostssh-row hostssh-element hidden" id="hostssh-row">
+      <div class="terminal-pane" id="pane-hostssh">
+        <div class="pane-header">
+          <span class="status-dot" id="status-hostssh"></span>
+          <span class="pane-title">Host SSH</span>
+          <span class="pane-spacer"></span>
+          <button class="pane-btn" id="reconnect-hostssh" title="Reconnect this pane">
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 4v4h4M15 12V8h-4"/><path d="M2.5 10.5a6 6 0 0 0 10.2 1.8M13.5 5.5a6 6 0 0 0-10.2-1.8"/></svg>
+          </button>
+        </div>
+        <div class="pane-body" id="term-hostssh"></div>
       </div>
     </div>
 
