@@ -10,7 +10,9 @@ import asyncio
 import csv
 import json
 import os
+import socket
 import sys
+import traceback
 import webbrowser
 from pathlib import Path
 from datetime import datetime, timezone
@@ -692,16 +694,87 @@ def create_app():
     return app
 
 
+def _pick_port(preferred, host="127.0.0.1", attempts=20):
+    """Return preferred if free, else the first free port after it."""
+    for offset in range(attempts):
+        candidate = preferred + offset
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            try:
+                s.bind((host, candidate))
+            except OSError:
+                continue
+            return candidate
+    raise OSError(
+        f"No free port found in range {preferred}-{preferred + attempts - 1}"
+    )
+
+
+def _pause_on_exit():
+    """Keep the console window open when launched as a .exe by double-click."""
+    if getattr(sys, "frozen", False) and sys.platform == "win32":
+        try:
+            input("\nPress Enter to close this window...")
+        except EOFError:
+            pass
+
+
 def main():
-    print(f"\n  KSB Flasher starting -> http://localhost:{PORT}\n")
-    webbrowser.open(f"http://localhost:{PORT}")
+    host = "127.0.0.1"
+
+    env_port = os.environ.get("KSB_FLASHER_PORT")
+    preferred = int(env_port) if env_port and env_port.isdigit() else PORT
+
+    try:
+        port = _pick_port(preferred, host=host)
+    except OSError as exc:
+        print(f"\n  ERROR: {exc}\n")
+        _pause_on_exit()
+        sys.exit(1)
+
+    if port != preferred:
+        print(
+            f"\n  Port {preferred} is busy (likely held by another app such as "
+            f"Cursor's Node debugger). Falling back to {port}."
+        )
+
+    url = f"http://localhost:{port}"
+    print(f"\n  KSB Flasher starting -> {url}\n")
 
     app = create_app()
 
     if sys.platform == "win32":
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
-    web.run_app(app, host="127.0.0.1", port=PORT, print=None)
+    async def _open_browser_when_ready():
+        for _ in range(50):
+            try:
+                with socket.create_connection((host, port), timeout=0.2):
+                    break
+            except OSError:
+                await asyncio.sleep(0.1)
+        webbrowser.open(url)
+
+    async def _runner():
+        runner = web.AppRunner(app)
+        await runner.setup()
+        site = web.TCPSite(runner, host=host, port=port)
+        await site.start()
+        asyncio.create_task(_open_browser_when_ready())
+        stop = asyncio.Event()
+        try:
+            await stop.wait()
+        finally:
+            await runner.cleanup()
+
+    try:
+        asyncio.run(_runner())
+    except KeyboardInterrupt:
+        pass
+    except Exception:
+        print("\n  KSB Flasher crashed:\n")
+        traceback.print_exc()
+        _pause_on_exit()
+        sys.exit(1)
 
 
 if __name__ == "__main__":
